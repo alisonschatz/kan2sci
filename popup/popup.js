@@ -1,12 +1,9 @@
 /**
- * kan2sci — controla a interface do popup: perfil, listagem e busca.
- * Le dados diretamente do storage local para evitar dependencia do service worker.
- *
- * Nao ha botao de sincronizar: a sincronizacao roda inteiramente em segundo
- * plano (background.js, via chrome.alarms). Ao abrir o popup, apenas
- * disparamos um pedido de sincronizacao "silencioso" (sem UI de status) como
- * reforco, e ouvimos mudancas no storage para refletir a lista assim que
- * ela for atualizada, mesmo que isso aconteca enquanto o popup esta aberto.
+ * kan2sci — interface do popup: perfil, listagem e busca de snippets.
+ * Lê direto do storage local (sem depender do service worker) e escuta
+ * mudanças de storage para refletir sincronizações que terminem com o
+ * popup aberto. Não há botão de sincronizar: roda tudo em segundo plano
+ * (background.js, via chrome.alarms).
  */
 
 /**
@@ -46,11 +43,8 @@ function setupEventListeners() {
 }
 
 /**
- * Pede ao background para sincronizar agora, de forma totalmente silenciosa
- * (sem indicador, sem bloquear a UI). Serve como reforco alem do alarme
- * periodico, cobrindo o caso do navegador ter ficado fechado por muito tempo.
- * Erros sao ignorados propositalmente: se o service worker estiver inativo
- * no momento, a sincronizacao periodica agendada cobre isso mais tarde.
+ * Reforça a sincronização periódica (útil se o navegador ficou fechado por
+ * muito tempo). Silenciosa: erros são ignorados, o alarme cobre depois.
  */
 function triggerBackgroundSync() {
   try {
@@ -87,15 +81,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-/**
- * ============================================================
- * Mais usados (atalhos rapidos)
- * ============================================================
- * O background ja conta cada expansao de snippet em `usageStats`
- * (mensagem 'logUsage'), mas ate agora esse dado nunca aparecia em
- * lugar nenhum. Aqui pegamos os 3 triggers mais usados pelo proprio
- * usuario e mostramos como chips no topo, antes mesmo de rolar a lista.
- */
+// ── Mais usados: mostra os 3 triggers mais usados (usageStats,
+// contabilizado pelo background em cada expansão) como chips no topo. ──
 function loadUsageStats() {
   try {
     chrome.runtime.sendMessage({ action: 'getUsageStats' }, (res) => {
@@ -108,9 +95,8 @@ function loadUsageStats() {
 }
 
 /**
- * Renderiza os chips de "Mais usados". Ignora a chave interna
- * "_lastUsed" (nao e um trigger) e esconde a secao inteira se ainda
- * nao houver nenhum uso registrado, em vez de mostrar um estado vazio.
+ * Renderiza os chips de "Mais usados". Ignora a chave interna "_lastUsed"
+ * e esconde a seção se ainda não houver uso registrado.
  */
 function renderTopUsed(stats) {
   const section = document.getElementById('topUsedSection');
@@ -143,14 +129,8 @@ function renderTopUsed(stats) {
   section.hidden = false;
 }
 
-/**
- * ============================================================
- * Indicador de sincronizacao (header)
- * ============================================================
- * A sincronizacao roda inteiramente em segundo plano (chrome.alarms em
- * background.js); sem este indicador o usuario nao tem nenhuma pista de
- * que ela existe, quando rodou pela ultima vez, ou se falhou.
- */
+// ── Indicador de sincronização (header): reflete status e último horário
+// da sincronização que roda em segundo plano (chrome.alarms). ──────────
 
 /**
  * Busca o status mais recente salvo pelo background e reflete no header.
@@ -171,7 +151,7 @@ function loadSyncStatus() {
 
 /**
  * Decide o estado visual (sincronizando / sincronizado / erro) a partir
- * do status salvo e do timestamp da ultima sincronizacao bem-sucedida.
+ * do status salvo e do timestamp da última sincronização.
  */
 function applySyncStatus(status, lastSync) {
   if (!lastSync && !status) {
@@ -417,10 +397,8 @@ async function loadSnippets() {
 }
 
 /**
- * Renderiza a lista de snippets no container.
- * Cada item e clicavel por inteiro (nao so o chip do atalho) e navegavel
- * por teclado, ja que a area do chip sozinho e um alvo pequeno demais
- * numa popup de 380px.
+ * Renderiza a lista de snippets. Cada item é clicável por inteiro (não só
+ * o chip do atalho) e navegável por teclado.
  */
 function renderSnippetList(snippets) {
   currentSnippets = snippets || [];

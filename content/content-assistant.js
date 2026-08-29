@@ -692,37 +692,20 @@
     };
     host.addEventListener('keydown', keyHandler);
 
-    // ═══════════════════════════════════════════════════════════════════
-    // ISOLAMENTO DE TECLADO/FOCO DO MODAL
-    // ═══════════════════════════════════════════════════════════════════
-    // Muitos sites (ex: Kanboard) têm atalhos de teclado globais de uma letra
-    // só (ex: "r", "t") ouvidos em document/body. Bibliotecas de atalho
-    // costumam checar se o evento veio de um campo de texto (input/textarea/
-    // contentEditable) e, se sim, ignorar o atalho. Só que, como este modal
-    // vive dentro de uma Shadow DOM, o evento de teclado sofre "event
-    // retargeting": para um listener fora da shadow root (como o da própria
-    // página), e.target aparece como o elemento HOST do modal (uma <div>),
-    // nunca como o <input>/<textarea> real que está focado. Isso faz a
-    // biblioteca de atalhos da página achar que o foco não está em um campo
-    // de texto, e o atalho de uma letra acaba disparando enquanto o usuário
-    // está digitando dentro do modal.
-    //
-    // A correção: impedir que qualquer evento de teclado (e de digitação)
-    // originado dentro do modal continue se propagando para fora dele. Como
-    // esses listeners globais de atalho normalmente escutam na fase de
-    // "bubble" (o padrão em addEventListener/jQuery), interceptar aqui no
-    // host — parando a propagação antes que o evento suba até document/body —
-    // resolve o problema na grande maioria dos casos.
+    // ISOLAMENTO DE TECLADO/FOCO: sites como o Kanboard têm atalhos globais
+    // de uma letra (ex: "r") escutados em document/body. Por causa do "event
+    // retargeting" do Shadow DOM, e.target chega até esses listeners como o
+    // <div> host do modal (não o input real focado), então a página acha que
+    // o foco não está em campo de texto e dispara o atalho. Paramos a
+    // propagação aqui no host (fase de bubble) antes que o evento suba.
     const isolateFromPage = (e) => e.stopPropagation();
     ['keydown', 'keyup', 'keypress', 'input', 'beforeinput'].forEach(type => {
       host.addEventListener(type, isolateFromPage);
     });
 
-    // Fecha clicando no backdrop.
-    // IMPORTANTE: não usar e.target aqui — dentro de Shadow DOM, cliques em qualquer
-    // elemento interno (botões, inputs etc.) sofrem "event retargeting" e aparecem
-    // como se o alvo fosse o próprio host quando o listener está fora do shadow root.
-    // e.composedPath()[0] retorna o elemento real onde o clique ocorreu.
+    // Fecha clicando no backdrop. Usa e.composedPath()[0] em vez de e.target,
+    // pois cliques dentro do Shadow DOM sofrem "event retargeting" (target
+    // sempre aparece como o host para listeners fora da shadow root).
     host.addEventListener('click', (e) => {
       if (e.composedPath()[0] === host) closeAssistant();
     });

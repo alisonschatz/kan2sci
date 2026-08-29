@@ -1,26 +1,13 @@
 /**
- * kan2sci — service worker responsavel por sincronizacao, cache e
- * orquestracao de dados dos snippets, alem da automacao de criacao de
- * Solicitacoes SCI a partir do Kanboard.
- *
- * A sincronizacao de snippets roda 100% em segundo plano (na instalacao,
- * no startup do navegador e a cada CONFIG.SYNC_INTERVAL_MINUTES via
- * chrome.alarms) — nao ha nenhuma acao manual do usuario necessaria.
- *
- * A automacao de Solicitacao SCI, por outro lado, e disparada sob demanda
- * pelo modal injetado em content/kanboard-request.js (acao
- * 'PROCESS_FULL_REQUEST'): abre a pagina real do formulario numa aba em
- * segundo plano, preenche os campos via DOM e clica em "Confirmar" de
- * verdade — a propria pagina cuida de qualquer token/validacao escondidos.
+ * kan2sci — service worker: sincronizacao/cache dos snippets (em segundo
+ * plano, via chrome.alarms) e automacao de criacao de Solicitacoes SCI a
+ * partir do modal do Kanboard (acao 'PROCESS_FULL_REQUEST').
  */
 
 importScripts('lib/utils.js', 'lib/yaml-parser.js');
 
-// Detecta automaticamente se a extensão está em modo desenvolvedor (carregada
-// via "Carregar sem compactação"), em vez de depender de uma flag manual que
-// é fácil esquecer de trocar antes de publicar. Extensões instaladas pela
-// Chrome Web Store (ou distribuídas por política) sempre têm "update_url" no
-// manifest resolvido pelo Chrome; extensões unpacked, nunca têm.
+// Extensões instaladas via Chrome Web Store (ou política) sempre têm
+// "update_url" resolvido no manifest; unpacked (dev), nunca têm.
 const IS_DEV = !('update_url' in chrome.runtime.getManifest());
 
 const CONFIG = {
@@ -113,12 +100,8 @@ async function syncSnippets(force = false) {
   }
 }
 
-/**
- * ===========================================================
- * Menu de contexto (botao direito) — insercao de snippet no
- * campo em que o usuario clicou, sem precisar digitar o gatilho.
- * ===========================================================
- */
+// ── Menu de contexto (botão direito): insere o snippet escolhido no campo
+// clicado, sem precisar digitar o gatilho. ──────────────────────────────
 
 const CONTEXT_MENU_ROOT_ID = 'kan2sci-root';
 const CONTEXT_MENU_PREFIX = 'kan2sci:';
@@ -303,13 +286,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-/**
- * ===========================================================
- * Automacao de Solicitacao SCI (via modal injetado no Kanboard,
- * content/kanboard-request.js) — abre a pagina real do formulario
- * numa aba em segundo plano, preenche via DOM e clica em "Confirmar".
- * ===========================================================
- */
+// ── Automação de Solicitação SCI: abre o formulário real numa aba em
+// segundo plano, preenche via DOM e clica em "Confirmar". ───────────────
 
 const KANBOARD_REQUEST_FORM_URL = 'https://www.s1991.com.br/solicitacaoInternoForm.php?sistemaId=43';
 const KR_NAV_TIMEOUT_MS = 20000;
@@ -652,11 +630,9 @@ function krClickConfirmStatus() {
 }
 
 /**
- * ⚠️ MELHOR ESFORÇO / NÃO CONFIRMADO: ainda não vimos o HTML da página que
- * aparece depois de confirmar. Tentamos achar o ID pela URL e, se não achar,
- * por um padrão de texto no corpo da página. Assim que soubermos o formato
- * real, esta função deve ser trocada por algo específico (ex: ler um campo
- * ou elemento exato da tela de resultado).
+ * ⚠️ Melhor esforço: extrai o ID da solicitação pela URL ou, na falta dela,
+ * por um padrão de texto no corpo da página de resultado. Ajustar para um
+ * seletor exato assim que o HTML dessa tela for confirmado.
  */
 function krExtractResultInfo() {
   const url = location.href;

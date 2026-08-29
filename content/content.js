@@ -3,11 +3,9 @@
 
   const MAX_LOOKBACK = 60;
 
-  // Hosts de Shadow DOM próprios da extensão cujos eventos 'input' internos
-  // devem ser ignorados pela expansão de snippets. Por causa do "event
-  // retargeting" do Shadow DOM em listeners no document, e.target aparece
-  // como o próprio elemento host do modal (não o input real dentro dele) —
-  // então basta checar o id do host pra ignorar esses eventos.
+  // Hosts de Shadow DOM próprios da extensão: eventos 'input' vindos de
+  // dentro deles sofrem "event retargeting" (e.target vira o host, não o
+  // input real) e não devem disparar a expansão de snippet novamente.
   const IGNORED_INPUT_HOST_IDS = new Set([
     'kan2sci-assistant',          // modal interativo de snippets
     'kan2sci-kanboard-request-host' // modal de Nova Solicitação SCI (Kanboard)
@@ -17,12 +15,9 @@
   let userInfoCache = { name: '', role: '', sector: '' };
   let isExpanding = false;
 
-  // Guarda o campo (input/textarea/contentEditable) que estava em foco no
-  // momento em que o menu de contexto (botao direito) foi aberto. O clique
-  // no item do menu acontece de forma assincrona, e alguns navegadores nao
-  // garantem que document.activeElement continue sendo o mesmo campo depois
-  // que o menu nativo fecha — por isso guardamos a referencia aqui, no
-  // momento em que o usuario clicou com o botao direito.
+  // Campo que estava em foco quando o menu de contexto abriu. O clique no
+  // item do menu é assíncrono e document.activeElement pode não ser mais
+  // o mesmo depois que o menu nativo fecha, então guardamos a referência aqui.
   let lastContextMenuTarget = null;
 
   /**
@@ -168,12 +163,10 @@
   }
 
   /**
-   * Executa a expansao do snippet no elemento alvo.
-   * `shortcut` e o texto de gatilho a remover antes de inserir (vazio quando
-   * vem do menu de contexto, que nao tem nada pra remover). `triggerForLog`
-   * e o trigger real do snippet, usado so pra registrar o uso — sem esse
-   * parametro separado, o menu de contexto logava trigger vazio em vez do
-   * trigger do snippet.
+   * Executa a expansão do snippet no elemento alvo.
+   * `shortcut` é o gatilho a remover antes de inserir (vazio quando vem do
+   * menu de contexto). `triggerForLog` é o trigger real, usado só para
+   * registrar o uso em usageStats.
    */
   function expandSnippet(target, shortcut, text, triggerForLog = shortcut) {
     isExpanding = true;
@@ -264,10 +257,8 @@
   }, true);
 
   /**
-   * Insere o snippet escolhido no menu de contexto na posicao exata do
-   * cursor do campo que estava com o menu aberto. Diferente do fluxo por
-   * digitacao (handleInput), aqui nao ha nenhum gatilho de texto a remover
-   * — por isso reaproveitamos expandSnippet/replaceIn* com shortcut = ''.
+   * Insere o snippet do menu de contexto na posição do cursor. Não há
+   * gatilho de texto a remover aqui, então shortcut = ''.
    */
   function insertSnippetFromContextMenu(trigger) {
     const item = snippetCache.find(s => s.trigger === trigger);

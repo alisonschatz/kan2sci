@@ -1,12 +1,9 @@
 /**
  * kan2sci — botão flutuante + modal de "Nova Solicitação SCI", injetados
- * apenas em https://kanboard.sci.com.br/* (ver manifest.json). O modal roda
- * em Shadow DOM para não herdar/colidir com o CSS do Kanboard; ao submeter,
- * o payload vai para o background.js (ação 'PROCESS_FULL_REQUEST'), que
- * preenche o formulário real da Intranet numa aba em segundo plano.
- *
- * IDs prefixados com "kan2sci-kanboard-" para não colidir com o restante da
- * extensão (ex: o modal do assistente de snippets, kan2sci-assistant).
+ * apenas em https://kanboard.sci.com.br/* (ver manifest.json). Roda em
+ * Shadow DOM (não herda o CSS do Kanboard); ao submeter, envia o payload
+ * para background.js (ação 'PROCESS_FULL_REQUEST'), que preenche o
+ * formulário real da Intranet numa aba em segundo plano.
  */
 (function () {
   'use strict';
@@ -19,13 +16,10 @@
   const CLASSIFICACOES = ['Tecnologia', 'Recurso', 'Legislação'];
   const CRITICIDADES = ['Crítica', 'Urgente', 'Alta', 'Normal'];
 
-  // Valores reais confirmados na tela de Etapa 2 (solicitacaoForm.php). O
-  // "value" enviado no formulário é o TEXTO da option, não um código numérico
-  // — o código só existe no atributo "alt", que não é submetido. Esta lista
-  // cobre as opções que ficam HABILITADAS partindo do status inicial
-  // "Solicitação registrada"; os demais status (Liberada, Cancelada, Em
-  // desenvolvimento etc.) nascem desabilitados até a solicitação avançar no
-  // fluxo, então não fazem sentido aqui.
+  // Valores confirmados na tela de Etapa 2 (o "value" enviado é o TEXTO da
+  // option, não o código numérico do atributo "alt"). Cobre só as opções
+  // habilitadas a partir do status inicial "Solicitação registrada" — as
+  // demais nascem desabilitadas até a solicitação avançar no fluxo.
   const STATUS_OPCOES = [
     'Pertinente',
     'Pertinente COM priorização',
@@ -268,11 +262,8 @@
 
   /**
    * Atualiza a UI do Kanboard após sucesso (Etapa 1 + Etapa 2 automatizadas).
-   * O ID (result.solicitacaoId) é melhor esforço.
-   *
-   * ⚠️ INTEGRAÇÃO PENDENTE: o seletor abaixo (.board-column .task-list) é um
-   * placeholder — ajuste para o seletor real da lista de backlog do Kanboard
-   * usado pela equipe.
+   * ⚠️ Pendente: o seletor ".board-column .task-list" é placeholder — trocar
+   * pelo seletor real da lista de backlog usada pela equipe.
    */
   function onAutomationSuccess(result) {
     const label = result.solicitacaoId
