@@ -19,15 +19,15 @@
       "js": [
         "lib/utils.js",
         "lib/yaml-parser.js",
-        "lib/content-assistant.js",
-        "content.js"
+        "content/content-assistant.js",
+        "content/content.js"
       ],
       "run_at": "document_end",
       "all_frames": false
     }
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup/popup.html",
     "default_title": "kan2sci",
     "default_icon": {
       "48": "icons/icon48.png",

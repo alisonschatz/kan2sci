@@ -12,7 +12,7 @@ const IS_DEV = true; // <-- Mude para false antes de publicar
 
 const CONFIG = {
   GITHUB_YAML_URL: IS_DEV
-    ? chrome.runtime.getURL('snippets.yml')   // arquivo local na extensão
+    ? chrome.runtime.getURL('data/snippets.yml')   // arquivo local na extensão
     : 'https://raw.githubusercontent.com/alisonschatz/sci-snippets/main/snippets.yml',
   
   SYNC_INTERVAL_MINUTES: 30,
