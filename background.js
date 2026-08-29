@@ -8,7 +8,12 @@
 
 importScripts('lib/utils.js', 'lib/yaml-parser.js');
 
-const IS_DEV = true; // <-- Mude para false antes de publicar
+// Detecta automaticamente se a extensão está em modo desenvolvedor (carregada
+// via "Carregar sem compactação"), em vez de depender de uma flag manual que
+// é fácil esquecer de trocar antes de publicar. Extensões instaladas pela
+// Chrome Web Store (ou distribuídas por política) sempre têm "update_url" no
+// manifest resolvido pelo Chrome; extensões unpacked, nunca têm.
+const IS_DEV = !('update_url' in chrome.runtime.getManifest());
 
 const CONFIG = {
   GITHUB_YAML_URL: IS_DEV
