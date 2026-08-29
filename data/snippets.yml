@@ -189,25 +189,9 @@ snippets:
       Atenciosamente,
       {{assinatura}}
 
-
-  - trigger: ":finalizarDev"
-    name: "Finalização do Desenvolvimento"
-    interactive: true
+  - trigger: ":ass"
+    name: "Assinatura"
+    interactive: false
     replace: |
-      ## FINALIZAÇÃO DO DESENVOLVIMENTO
-
-      - **O que foi feito:** 
-
-      ---
-
-      **Onde/como testar**
-      - **Caminho:**
-      - **Cenário Principal:** 
-
-      ---
-
-      - **Impactos/alterações adicionais:** 
-
-      ---
       Atenciosamente,
       {{assinatura}}
