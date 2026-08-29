@@ -106,6 +106,100 @@ async function syncSnippets(force = false) {
 }
 
 /**
+ * ===========================================================
+ * Menu de contexto (botao direito) — insercao de snippet no
+ * campo em que o usuario clicou, sem precisar digitar o gatilho.
+ * ===========================================================
+ */
+
+const CONTEXT_MENU_ROOT_ID = 'kan2sci-root';
+const CONTEXT_MENU_PREFIX = 'kan2sci:';
+
+/**
+ * Reconstroi o submenu "kan2sci" a partir da lista de snippets atual.
+ * Chamado sempre que os snippets mudam no storage (sync concluida,
+ * edicao manual, etc.) e tambem no boot do service worker, ja que
+ * chrome.contextMenus nao mantem estado entre reinicios.
+ */
+function buildContextMenus(snippets) {
+  chrome.contextMenus.removeAll(() => {
+    // Ignora erro de "nao havia menus para remover" na primeira execucao.
+    void chrome.runtime.lastError;
+
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU_ROOT_ID,
+      title: 'kan2sci',
+      contexts: ['editable']
+    });
+
+    if (!snippets || snippets.length === 0) {
+      chrome.contextMenus.create({
+        id: `${CONTEXT_MENU_PREFIX}__empty__`,
+        parentId: CONTEXT_MENU_ROOT_ID,
+        title: 'Nenhum snippet carregado',
+        enabled: false,
+        contexts: ['editable']
+      });
+      return;
+    }
+
+    snippets.forEach((item) => {
+      if (!item.trigger) return;
+      chrome.contextMenus.create({
+        id: CONTEXT_MENU_PREFIX + item.trigger,
+        parentId: CONTEXT_MENU_ROOT_ID,
+        // Mostra nome + gatilho, ex: "Abertura de Solicitação (:abrir)"
+        title: item.name ? `${item.name}  (${item.trigger})` : item.trigger,
+        contexts: ['editable']
+      });
+    });
+  });
+}
+
+/**
+ * Carrega os snippets atuais do storage e (re)monta o menu.
+ * Usado no onInstalled/onStartup, quando o service worker acorda
+ * "do zero" e o menu nativo precisa ser recriado.
+ */
+function refreshContextMenusFromStorage() {
+  chrome.storage.local.get([CONFIG.STORAGE_KEYS.SNIPPETS]).then((data) => {
+    buildContextMenus(data[CONFIG.STORAGE_KEYS.SNIPPETS] || []);
+  });
+}
+
+// Sempre que a lista de snippets mudar no storage (sync automatica,
+// principalmente), o menu e reconstruido para refletir a lista nova.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (changes[CONFIG.STORAGE_KEYS.SNIPPETS]) {
+    buildContextMenus(changes[CONFIG.STORAGE_KEYS.SNIPPETS].newValue || []);
+  }
+});
+
+// Clique em um item do submenu: repassa o gatilho escolhido para o
+// content script da aba, que sabe qual campo estava com o menu aberto
+// e faz a insercao exatamente na posicao do cursor.
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (typeof info.menuItemId !== 'string') return;
+  if (!info.menuItemId.startsWith(CONTEXT_MENU_PREFIX)) return;
+  if (!tab || tab.id === undefined) return;
+
+  const trigger = info.menuItemId.slice(CONTEXT_MENU_PREFIX.length);
+  if (!trigger || trigger === '__empty__') return;
+
+  chrome.tabs.sendMessage(
+    tab.id,
+    { action: 'insertContextMenuSnippet', trigger },
+    { frameId: info.frameId },
+    () => {
+      // Se o content script nao existir na pagina (ex: chrome://, PDF
+      // viewer), apenas ignora o erro em vez de quebrar o service worker.
+      void chrome.runtime.lastError;
+    }
+  );
+});
+
+/**
  * Agenda sincronizacao periodica via alarmes.
  */
 function setupPeriodicSync() {
@@ -124,10 +218,12 @@ chrome.runtime.onInstalled.addListener((details) => {
   SCIUtils.log('log', 'Extensao instalada/atualizada', details.reason);
   syncSnippets(true);
   setupPeriodicSync();
+  refreshContextMenusFromStorage();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   setupPeriodicSync();
+  refreshContextMenusFromStorage();
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {

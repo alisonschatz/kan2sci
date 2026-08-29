@@ -7,6 +7,14 @@
   let userInfoCache = { name: '', role: '' };
   let isExpanding = false;
 
+  // Guarda o campo (input/textarea/contentEditable) que estava em foco no
+  // momento em que o menu de contexto (botao direito) foi aberto. O clique
+  // no item do menu acontece de forma assincrona, e alguns navegadores nao
+  // garantem que document.activeElement continue sendo o mesmo campo depois
+  // que o menu nativo fecha — por isso guardamos a referencia aqui, no
+  // momento em que o usuario clicou com o botao direito.
+  let lastContextMenuTarget = null;
+
   /**
    * Carrega snippets e perfil do usuario do storage local.
    */
@@ -230,6 +238,55 @@
       }
     }
   }
+
+  /**
+   * Registra o campo ativo sempre que o menu de contexto (botao direito)
+   * e aberto sobre um elemento editavel. E o que permite ao menu nativo
+   * do Chrome (que roda 100% no background, sem acesso ao DOM da pagina)
+   * saber depois, ao receber o clique, ONDE inserir o snippet.
+   */
+  document.addEventListener('contextmenu', () => {
+    lastContextMenuTarget = getActiveTextElement();
+  }, true);
+
+  /**
+   * Insere o snippet escolhido no menu de contexto na posicao exata do
+   * cursor do campo que estava com o menu aberto. Diferente do fluxo por
+   * digitacao (handleInput), aqui nao ha nenhum gatilho de texto a remover
+   * — por isso reaproveitamos expandSnippet/replaceIn* com shortcut = ''.
+   */
+  function insertSnippetFromContextMenu(trigger) {
+    const item = snippetCache.find(s => s.trigger === trigger);
+    if (!item) {
+      SCIUtils.log('warn', 'Snippet do menu de contexto nao encontrado', trigger);
+      return;
+    }
+
+    // Se o campo ainda existir no DOM, usa o que foi registrado no
+    // contextmenu; caso contrario cai de volta no elemento focado agora.
+    const target = (lastContextMenuTarget && document.contains(lastContextMenuTarget.element))
+      ? lastContextMenuTarget
+      : getActiveTextElement();
+
+    if (!target) {
+      SCIUtils.log('warn', 'Nenhum campo editavel disponivel para inserir o snippet');
+      return;
+    }
+
+    if (item.interactive === true && window.SCIAssistant) {
+      window.SCIAssistant.open(item, target, userInfoCache);
+      return;
+    }
+
+    const processedText = SCIUtils.parseTemplate(item.replace, userInfoCache);
+    expandSnippet(target, '', processedText);
+  }
+
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'insertContextMenuSnippet') {
+      insertSnippetFromContextMenu(message.trigger);
+    }
+  });
 
   document.addEventListener('input', handleInput, true);
 

@@ -5,7 +5,8 @@
   "description": "Snippets inteligentes com sincronização automática para tickets do Kanboard - equipe SCI.",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "contextMenus"
   ],
   "host_permissions": [
     "https://raw.githubusercontent.com/*"
