@@ -9,6 +9,15 @@
  * ela for atualizada, mesmo que isso aconteca enquanto o popup esta aberto.
  */
 
+/**
+ * Icones de tipo (SVG inline, sem depender de fonte externa — a extensao
+ * roda offline/em ambiente corporativo, entao evitamos CDN de icones).
+ * Raio = snippet interativo (abre o modal assistido).
+ * Copia = snippet direto (cola o texto assim que o gatilho e digitado).
+ */
+const ICON_BOLT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>';
+const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+
 document.addEventListener('DOMContentLoaded', async () => {
   await initializePopup();
   setupEventListeners();
@@ -21,6 +30,7 @@ async function initializePopup() {
   await loadUserProfile();
   await loadSnippets();
   loadSyncStatus();
+  loadUsageStats();
   triggerBackgroundSync();
 }
 
@@ -71,7 +81,67 @@ chrome.storage.onChanged.addListener((changes, area) => {
       applySyncStatus(data.syncStatus || null, data.lastSync || null);
     });
   }
+
+  if (changes.usageStats) {
+    renderTopUsed(changes.usageStats.newValue || {});
+  }
 });
+
+/**
+ * ============================================================
+ * Mais usados (atalhos rapidos)
+ * ============================================================
+ * O background ja conta cada expansao de snippet em `usageStats`
+ * (mensagem 'logUsage'), mas ate agora esse dado nunca aparecia em
+ * lugar nenhum. Aqui pegamos os 3 triggers mais usados pelo proprio
+ * usuario e mostramos como chips no topo, antes mesmo de rolar a lista.
+ */
+function loadUsageStats() {
+  try {
+    chrome.runtime.sendMessage({ action: 'getUsageStats' }, (res) => {
+      if (chrome.runtime.lastError || !res) return;
+      renderTopUsed(res.stats || {});
+    });
+  } catch (err) {
+    // noop — sem "mais usados" nao compromete o uso normal da lista
+  }
+}
+
+/**
+ * Renderiza os chips de "Mais usados". Ignora a chave interna
+ * "_lastUsed" (nao e um trigger) e esconde a secao inteira se ainda
+ * nao houver nenhum uso registrado, em vez de mostrar um estado vazio.
+ */
+function renderTopUsed(stats) {
+  const section = document.getElementById('topUsedSection');
+  const list = document.getElementById('topUsedList');
+
+  const topTriggers = Object.entries(stats || {})
+    .filter(([key, count]) => key !== '_lastUsed' && count > 0)
+    .filter(([trigger]) => currentSnippets.some(s => s.trigger === trigger))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([trigger]) => trigger);
+
+  if (!topTriggers.length) {
+    section.hidden = true;
+    return;
+  }
+
+  list.innerHTML = '';
+  topTriggers.forEach(trigger => {
+    const item = currentSnippets.find(s => s.trigger === trigger);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'top-used-chip';
+    chip.textContent = trigger;
+    chip.title = item ? `Copiar atalho de "${item.name}"` : 'Copiar atalho';
+    chip.addEventListener('click', () => copyTriggerToClipboard(chip, trigger));
+    list.appendChild(chip);
+  });
+
+  section.hidden = false;
+}
 
 /**
  * ============================================================
@@ -370,7 +440,14 @@ function renderSnippetList(snippets) {
     div.setAttribute('tabindex', '0');
     div.setAttribute('aria-label', `Copiar atalho ${item.trigger} de ${item.name || 'snippet'}`);
     div.title = 'Clique para copiar o atalho';
+
+    const isInteractive = item.interactive === true;
+    const iconClass = isInteractive ? 'is-interactive' : 'is-direct';
+    const iconSvg = isInteractive ? ICON_BOLT : ICON_COPY;
+    const iconTitle = isInteractive ? 'Abre formulario assistido' : 'Cola direto no campo';
+
     div.innerHTML = `
+      <span class="snippet-icon ${iconClass}" title="${iconTitle}" aria-hidden="true">${iconSvg}</span>
       <span class="snippet-name">${escapeHtml(item.name || 'Sem nome')}</span>
       <span class="snippet-trigger">${escapeHtml(item.trigger)}</span>
     `;

@@ -274,6 +274,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'getUsageStats') {
+    chrome.storage.local.get([CONFIG.STORAGE_KEYS.STATS])
+      .then(data => {
+        sendResponse({ stats: data.usageStats || {} });
+      });
+    return true;
+  }
+
   if (message.action === 'logUsage') {
     chrome.storage.local.get([CONFIG.STORAGE_KEYS.STATS]).then(data => {
       const stats = data.usageStats || {};

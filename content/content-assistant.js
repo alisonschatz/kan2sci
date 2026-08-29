@@ -669,6 +669,12 @@
         insertTextInRichEditor(originalTarget.element, finalText);
       }
 
+      // Sem isso, snippets interativos (todos, atualmente) nunca apareciam
+      // em usageStats — só o fluxo direto (sem modal) registrava uso.
+      try {
+        chrome.runtime.sendMessage({ action: 'logUsage', trigger: snippet.trigger });
+      } catch (e) {}
+
       closeAssistant();
     };
     shadow.getElementById('sciInsert').addEventListener('click', doInsert);

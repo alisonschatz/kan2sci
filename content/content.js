@@ -159,8 +159,13 @@
 
   /**
    * Executa a expansao do snippet no elemento alvo.
+   * `shortcut` e o texto de gatilho a remover antes de inserir (vazio quando
+   * vem do menu de contexto, que nao tem nada pra remover). `triggerForLog`
+   * e o trigger real do snippet, usado so pra registrar o uso — sem esse
+   * parametro separado, o menu de contexto logava trigger vazio em vez do
+   * trigger do snippet.
    */
-  function expandSnippet(target, shortcut, text) {
+  function expandSnippet(target, shortcut, text, triggerForLog = shortcut) {
     isExpanding = true;
     try {
       const success = target.type === 'input'
@@ -169,7 +174,7 @@
 
       if (success) {
         try {
-          chrome.runtime.sendMessage({ action: 'logUsage', trigger: shortcut });
+          chrome.runtime.sendMessage({ action: 'logUsage', trigger: triggerForLog });
         } catch (e) {}
       }
 
@@ -279,7 +284,7 @@
     }
 
     const processedText = SCIUtils.parseTemplate(item.replace, userInfoCache);
-    expandSnippet(target, '', processedText);
+    expandSnippet(target, '', processedText, item.trigger);
   }
 
   chrome.runtime.onMessage.addListener((message) => {
