@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCI Snippets</title>
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <span class="brand-name">SCI Snippets</span>
+      <span class="brand-version">v2.0</span>
+    </div>
+    <div class="sync-indicator" id="syncIndicator" title="Status da sincronizacao">
+      <span class="sync-dot" id="syncDot"></span>
+      <span class="sync-text" id="syncText">Verificando...</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Perfil do Usuario -->
+    <section class="section profile-section" id="profileSection">
+      <div class="section-header">
+        <h2 class="section-title">Perfil do Usu&aacute;rio</h2>
+      </div>
+
+      <div class="profile-body">
+        <!-- Estado recolhido: perfil ja preenchido -->
+        <div class="profile-summary" id="profileSummary" hidden>
+          <div class="profile-summary-info">
+            <span class="profile-avatar" id="profileAvatar" aria-hidden="true">?</span>
+            <div class="profile-summary-text">
+              <span class="profile-summary-name" id="profileSummaryName"></span>
+              <span class="profile-summary-role" id="profileSummaryRole"></span>
+            </div>
+          </div>
+          <button type="button" class="profile-edit-btn" id="profileEditBtn">Editar</button>
+        </div>
+
+        <!-- Estado expandido: formulario, visivel quando o perfil ainda nao foi preenchido ou esta em edicao -->
+        <div class="profile-form" id="profileForm">
+          <div class="profile-form-fields">
+            <div class="form-group">
+              <label for="userName">Nome</label>
+              <input type="text" id="userName" class="form-input" placeholder="Ex: Joao Silva" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="userRole">Cargo</label>
+              <input type="text" id="userRole" class="form-input" placeholder="Ex: Analista" autocomplete="off">
+            </div>
+          </div>
+          <div class="profile-form-actions">
+            <button id="saveProfileBtn" class="btn btn-primary">Salvar Perfil</button>
+            <button type="button" id="cancelProfileBtn" class="btn btn-ghost" hidden>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista de Snippets -->
+    <section class="section snippets-section">
+      <div class="section-header">
+        <h2 class="section-title">Snippets Disponiveis</h2>
+        <span class="count-badge" id="snippetCount">0</span>
+      </div>
+      <div class="search-box">
+        <input type="text" id="snippetSearch" class="form-input search-input" placeholder="Pesquisar snippets..." autocomplete="off">
+      </div>
+      <div class="snippet-list" id="snippetContainer">
+        <div class="empty-state" id="emptyState">
+          <p class="empty-text">Nenhum snippet carregado.</p>
+          <p class="empty-sub">Clique em sincronizar para atualizar.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Acoes -->
+    <section class="section actions-section">
+      <button id="syncBtn" class="btn btn-secondary btn-full">
+        Sincronizar
+      </button>
+      <button id="openOptionsBtn" class="btn btn-ghost btn-full">
+        Configuracoes Avancadas
+      </button>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>SCI Sistemas Contabeis</p>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

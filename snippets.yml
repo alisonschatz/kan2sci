@@ -1,0 +1,219 @@
+snippets:
+  - trigger: ":abrir"
+    name: "Abertura de Solicitação"
+    interactive: true
+    replace: |
+      ## CONTEXTUALIZAÇÃO DO REQUISITO
+
+      **Localização / Acesso**
+      - **URL!:** https://
+      - **Caminho!:**
+
+      **Acessos para Teste!**
+      {{acessos}}
+
+      ---
+
+      ## SITUAÇÃO / PROBLEMÁTICA
+      - **Comportamento Atual!:** 
+      - **Comportamento Esperado!:** 
+
+      ---
+
+      ## COMO REPRODUZIR!
+      1. 
+
+      ---
+
+      ## CRITÉRIOS DE ACEITE
+      - 
+
+      ---
+
+      ## EVIDÊNCIAS
+      - Print(s) anexado(s) ao card.
+      - Vídeo anexado ao card.
+
+      ---
+      Atenciosamente,
+      {{user_name}}
+      {{user_role}} | {{current_date}}
+
+
+  - trigger: ":aprovar"
+    name: "Aprovação de Solicitação"
+    interactive: true
+    replace: |
+      ## CONTEXTUALIZAÇÃO DO TESTE
+
+      **Ambiente:** [ ] Produção | [ ] Homologação
+
+      **Localização**
+      - **URL:** https://
+      - **Caminho:**
+
+      **Acessos Utilizados**
+      {{acessos}}
+
+      ---
+
+      ## VALIDAÇÕES REALIZADAS
+      - **Correção Principal:** 
+      - **Cenários Relacionados / Regressão:** 
+
+      **Passos Executados:**
+      1. 
+
+      ---
+
+      ## EVIDÊNCIAS
+      - Print(s) anexado(s) ao card.
+      - Vídeo anexado ao card.
+
+      ---
+
+      ## OBSERVAÇÕES
+      - 
+
+      ---
+
+      ## RESULTADO DO TESTE
+      **Status:** APROVADO
+
+      ---
+      Atenciosamente,
+      {{user_name}}
+      {{user_role}} | {{current_date}}
+
+
+  - trigger: ":reprovar"
+    name: "Reprovação de Solicitação"
+    interactive: true
+    replace: |
+      ## CONTEXTUALIZAÇÃO DO TESTE
+
+      **Ambiente:** [ ] Produção | [ ] Homologação
+
+      **Localização**
+      - **URL:** https://
+      - **Caminho:**
+
+      **Acessos Utilizados**
+      {{acessos}}
+
+      ---
+
+      ## MOTIVO DA REPROVAÇÃO
+      - **Comportamento Obtido:** 
+      - **Comportamento Esperado:** 
+
+      ---
+
+      ## PASSO A PASSO DA REPRODUÇÃO
+      1. 
+
+      ---
+
+      ## EVIDÊNCIAS
+      - Print(s) anexado(s) ao card.
+      - Vídeo anexado ao card.
+
+      ---
+
+      ## OBSERVAÇÕES
+      - 
+
+      ---
+
+      ## RESULTADO DO TESTE
+      **Status:** REPROVADO
+
+      ---
+      Atenciosamente,
+      {{user_name}}
+      {{user_role}} | {{current_date}}
+
+
+  - trigger: ":impedimento"
+    name: "Registro de Impedimento"
+    interactive: true
+    replace: |
+      ## IMPEDIMENTO IDENTIFICADO
+
+      **Ambiente:** [ ] Produção | [ ] Homologação
+
+      **Localização**
+      - **URL:** https://
+      - **Caminho:**
+
+      ---
+
+      ## DESCRIÇÃO DO BLOQUEIO
+      - **Motivo:** 
+      - **Dependência:** [ ] Ambiente offline | [ ] Acesso/Permissão | [ ] Erro 500/API | [ ] Outro
+
+      ---
+
+      ## IMPACTO
+      - **Bloqueia:** [ ] Card completo | [ ] Cenário específico apenas
+
+      ---
+
+      ## EVIDÊNCIAS / ERRO
+      - 
+
+      ---
+      Atenciosamente,
+      {{user_name}}
+      {{user_role}} | {{current_date}}
+
+
+  - trigger: ":regras"
+    name: "Dúvida de Regra de Negócio"
+    interactive: true
+    replace: |
+      ## DÚVIDA DE REGRA DE NEGÓCIO
+
+      - **Caminho:**
+
+      ---
+
+      ## CENÁRIO / CONTEXTO
+      - **Dúvida:** 
+      - **Cenário Atual:** 
+
+      Questionamento: Como o sistema deve se comportar neste caso específico?
+
+      ---
+
+      ## IMPACTO NO CARD
+      - [ ] Aguardando definição do Product Owner (PO) / Analista de Negócio para prosseguir.
+
+      ---
+      Atenciosamente,
+      {{user_name}}
+      {{user_role}} | {{current_date}}
+
+
+  - trigger: ":finalizarDev"
+    name: "Finalização do Desenvolvimento"
+    interactive: true
+    replace: |
+      ## FINALIZAÇÃO DO DESENVOLVIMENTO
+
+      - **O que foi feito:** 
+
+      ---
+
+      **Onde/como testar**
+      - **Caminho:**
+      - **Cenário Principal:** 
+
+      ---
+
+      - **Impactos/alterações adicionais:** 
+
+      ---
+      Atenciosamente,
+      {{user_name}}
+      {{user_role}} | {{current_date}}

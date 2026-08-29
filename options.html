@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuracoes - SCI Snippets</title>
+  <link rel="stylesheet" href="styles/options.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="sidebar-brand-name">SCI Snippets</span>
+        <span class="sidebar-brand-sub">Painel de Controle</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#profile" class="nav-link active" data-section="profile">Perfil</a>
+        <a href="#snippets" class="nav-link" data-section="snippets">Snippets</a>
+        <a href="#sync" class="nav-link" data-section="sync">Sincronizacao</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <!-- Secao Perfil -->
+      <section id="profile" class="content-section active">
+        <header class="content-header">
+          <h1>Perfil do Usuario</h1>
+          <p class="content-desc">Configure seus dados para preenchimento automatico nos snippets.</p>
+        </header>
+
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="optName">Nome Completo</label>
+              <input type="text" id="optName" class="form-input" placeholder="Ex: Joao Silva">
+            </div>
+            <div class="form-group">
+              <label for="optRole">Cargo / Setor</label>
+              <input type="text" id="optRole" class="form-input" placeholder="Ex: Analista de Suporte">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="optEmail">E-mail Corporativo</label>
+            <input type="email" id="optEmail" class="form-input" placeholder="exemplo@sci.com.br">
+          </div>
+          <div class="form-actions">
+            <button id="saveProfileOpt" class="btn btn-primary">Salvar Alteracoes</button>
+            <span class="save-status" id="saveStatus"></span>
+          </div>
+        </div>
+
+        <div class="card card-muted">
+          <h3 class="card-title">Variaveis Disponiveis</h3>
+          <p class="card-text">Use estas variaveis nos snippets do repositorio para preenchimento dinamico:</p>
+          <div class="var-grid">
+            <div class="var-item">
+              <code class="var-code">{{user_name}}</code>
+              <span class="var-desc">Nome do usuario configurado acima</span>
+            </div>
+            <div class="var-item">
+              <code class="var-code">{{user_role}}</code>
+              <span class="var-desc">Cargo ou setor configurado</span>
+            </div>
+            <div class="var-item">
+              <code class="var-code">{{current_date}}</code>
+              <span class="var-desc">Data atual no formato DD/MM/YYYY</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Secao Snippets -->
+      <section id="snippets" class="content-section">
+        <header class="content-header">
+          <h1>Snippets Sincronizados</h1>
+          <p class="content-desc">Visualize todos os atalhos disponiveis e seus conteudos.</p>
+        </header>
+
+        <div class="toolbar">
+          <input type="text" id="snippetSearchOpt" class="form-input search-input" placeholder="Pesquisar por nome ou atalho...">
+          <span class="toolbar-count"><strong id="snippetCountOpt">0</strong> snippets carregados</span>
+        </div>
+
+        <div class="snippet-table-wrapper">
+          <table class="snippet-table" id="snippetTable">
+            <thead>
+              <tr>
+                <th>Atalho</th>
+                <th>Nome</th>
+              </tr>
+            </thead>
+            <tbody id="snippetTableBody">
+              <tr class="empty-row">
+                <td colspan="2">Nenhum snippet carregado. Sincronize para atualizar.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Secao Sincronizacao -->
+      <section id="sync" class="content-section">
+        <header class="content-header">
+          <h1>Sincronizacao</h1>
+          <p class="content-desc">Gerencie a fonte de dados e o historico de sincronizacoes.</p>
+        </header>
+
+        <div class="card">
+          <h3 class="card-title">Status da Ultima Sincronizacao</h3>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Estado</span>
+              <span class="status-value" id="syncState">--</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Data</span>
+              <span class="status-value" id="syncDate">--</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Total de Snippets</span>
+              <span class="status-value" id="syncCount">--</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Mensagem</span>
+              <span class="status-value" id="syncMessage">--</span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button id="forceSyncOpt" class="btn btn-primary">Sincronizar Agora</button>
+          </div>
+        </div>
+
+        <div class="card card-muted">
+          <h3 class="card-title">Fonte de Dados</h3>
+          <p class="card-text">URL do repositorio YAML utilizado para sincronizacao:</p>
+          <code class="code-block" id="sourceUrl">https://raw.githubusercontent.com/alisonschatz/sci-snippets/main/snippets.yml</code>
+          <p class="card-text card-text-small">A sincronizacao automatica ocorre a cada 30 minutos.</p>
+        </div>
+      </section>
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCI Snippets</title>
+<link rel="icon" type="image/png" href="icons/icon48.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --navy: #38486c;
+    --navy-dark: #2a3652;
+    --blue: #91d8f7;
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --text: #38486c;
+    --text-muted: #6b7a99;
+    --text-light: #9aa4b8;
+    --border: #d8dde8;
+    --success: #2e7d32;
+    --error: #c62828;
+    --radius-sm: 6px;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 4px 24px rgba(56, 72, 108, 0.10);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 36px 32px;
+  }
+
+  .btn-download {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font);
+    padding: 14px 20px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+
+  .btn-download:hover { background: var(--navy-dark); }
+  .btn-download:active { transform: translateY(1px); }
+  .btn-download:disabled { opacity: 0.65; cursor: default; transform: none; }
+
+  .download-status {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 16px;
+  }
+
+  .download-status.success { color: var(--success); }
+  .download-status.error { color: var(--error); }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 28px 0 24px;
+  }
+
+  .install h2 {
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 20px;
+  }
+
+  .steps { list-style: none; }
+
+  .steps li {
+    display: flex;
+    gap: 14px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .steps li:last-child {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .step-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+
+  .step-body p {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .step-body code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--navy);
+  }
+
+  .ui-label {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--navy);
+    background: rgba(145, 216, 247, 0.22);
+    border: 1px solid var(--border);
+    padding: 1px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .copy-chip {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--navy);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .copy-chip:hover {
+    background: rgba(145, 216, 247, 0.25);
+    border-color: var(--blue);
+  }
+
+  .copy-chip svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+
+  .copy-chip.copied {
+    color: var(--success);
+    border-color: var(--success);
+  }
+
+  @media (max-width: 400px) {
+    .card { padding: 28px 22px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <button class="btn-download" id="downloadBtn" onclick="downloadExtensionZip()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12"/>
+        <path d="m7 10 5 5 5-5"/>
+        <path d="M5 21h14"/>
+      </svg>
+      Baixar extens&atilde;o (.zip)
+    </button>
+    <span class="download-status" id="downloadStatus"></span>
+
+    <div class="divider"></div>
+
+    <div class="install">
+      <h2>Como instalar</h2>
+      <ol class="steps">
+        <li>
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <p class="step-title">Baixe e descompacte</p>
+            <p>Clique no bot&atilde;o acima e extraia o arquivo <code>.zip</code> baixado em uma pasta.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <p class="step-title">Abra as extens&otilde;es do Chrome</p>
+            <p>Acesse
+              <button type="button" class="copy-chip" data-copy="chrome://extensions" title="Clique para copiar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="11" height="11" rx="1.5"/>
+                  <path d="M5 15V5.5A1.5 1.5 0 0 1 6.5 4H15"/>
+                </svg>
+                <span class="copy-chip-label">chrome://extensions</span>
+              </button>
+              pela barra de endere&ccedil;os.
+            </p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div class="step-body">
+            <p class="step-title">Ative o Modo do desenvolvedor</p>
+            <p>O interruptor fica no canto superior direito da p&aacute;gina.</p>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">4</span>
+          <div class="step-body">
+            <p class="step-title">Carregue a pasta descompactada</p>
+            <p>Clique em <span class="ui-label">Carregar sem compacta&ccedil;&atilde;o</span> e selecione a pasta extra&iacute;da no passo 1.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) { /* cai no fallback abaixo */ }
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    document.querySelectorAll('.copy-chip').forEach(btn => {
+      const labelEl = btn.querySelector('.copy-chip-label');
+      const originalLabel = labelEl.textContent;
+
+      btn.addEventListener('click', async () => {
+        const ok = await copyText(btn.dataset.copy);
+        labelEl.textContent = ok ? 'Copiado!' : 'Erro ao copiar';
+        btn.classList.toggle('copied', ok);
+        setTimeout(() => {
+          labelEl.textContent = originalLabel;
+          btn.classList.remove('copied');
+        }, 1400);
+      });
+    });
+
+    async function downloadExtensionZip() {
+      const btn = document.getElementById('downloadBtn');
+      const status = document.getElementById('downloadStatus');
+      const originalHTML = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.textContent = 'Preparando arquivo...';
+      status.textContent = '';
+      status.className = 'download-status';
+
+      try {
+        const zip = new JSZip();
+
+        // Arquivos de texto (JS, HTML, JSON, CSS)
+        const textFiles = [
+          'manifest.json', 'background.js', 'content.js',
+          'popup.html', 'popup.js',
+          'options.html', 'options.js',
+          'lib/utils.js', 'lib/yaml-parser.js',
+          'styles/popup.css', 'styles/options.css'
+        ];
+
+        const binaryFiles = [
+          'icons/icon48.png', 'icons/icon128.png'
+        ];
+
+        const missing = [];
+
+        for (const path of textFiles) {
+          try {
+            const res = await fetch(path);
+            if (res.ok) zip.file(path, await res.text());
+            else missing.push(path);
+          } catch (e) { missing.push(path); }
+        }
+
+        for (const path of binaryFiles) {
+          try {
+            const res = await fetch(path);
+            if (res.ok) zip.file(path, await res.blob());
+            else missing.push(path);
+          } catch (e) { missing.push(path); }
+        }
+
+        if (missing.length) {
+          status.textContent = 'N\u00e3o foi poss\u00edvel incluir: ' + missing.join(', ');
+          status.classList.add('error');
+          return;
+        }
+
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'sci-snippets.zip';
+        a.click();
+
+        status.textContent = 'Download iniciado.';
+        status.classList.add('success');
+      } catch (err) {
+        status.textContent = 'Erro ao gerar o arquivo. Tente novamente.';
+        status.classList.add('error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    }
+  </script>
+</body>
+</html>
