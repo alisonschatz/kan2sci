@@ -29,7 +29,9 @@
         <!-- Estado recolhido: perfil ja preenchido -->
         <div class="profile-summary" id="profileSummary" hidden>
           <div class="profile-summary-info">
-            <span class="profile-avatar" id="profileAvatar" aria-hidden="true">?</span>
+            <span class="profile-avatar" aria-hidden="true">
+              <img src="../icons/sci-logo.png" alt="" id="profileAvatarImg">
+            </span>
             <div class="profile-summary-text">
               <span class="profile-summary-name" id="profileSummaryName"></span>
               <span class="profile-summary-role" id="profileSummaryRole"></span>
@@ -41,9 +43,17 @@
         <!-- Estado expandido: formulario, visivel quando o perfil ainda nao foi preenchido ou esta em edicao -->
         <div class="profile-form" id="profileForm">
           <div class="profile-form-fields">
-            <div class="form-group">
+            <div class="form-group form-group-name">
               <label for="userName">Nome</label>
-              <input type="text" id="userName" class="form-input" placeholder="Ex: Joao Silva" autocomplete="off">
+              <input type="text" id="userName" class="form-input" placeholder="Ex: Jo&atilde;o Silva" autocomplete="off">
+            </div>
+            <div class="form-group form-group-sector">
+              <label for="userSector">Setor</label>
+              <select id="userSector" class="form-input">
+                <option value="">Selecione...</option>
+                <option value="RH Net Social">RH Net Social</option>
+                <option value="SCI WEB">SCI WEB</option>
+              </select>
             </div>
             <div class="form-group">
               <label for="userRole">Cargo</label>

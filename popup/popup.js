@@ -194,12 +194,13 @@ async function loadUserProfile() {
 }
 
 /**
- * Preenche o card de resumo com nome, cargo e iniciais.
+ * Preenche o card de resumo com nome e "cargo · setor".
+ * O avatar agora e sempre a logo da SCI (fixa no HTML), sem depender do nome.
  */
 function renderProfileSummary(info) {
-  document.getElementById('profileAvatar').textContent = getInitials(info.name);
   document.getElementById('profileSummaryName').textContent = info.name || '';
-  document.getElementById('profileSummaryRole').textContent = info.role || '';
+  document.getElementById('profileSummaryRole').textContent =
+    [info.role, info.sector].filter(Boolean).join(' · ');
 }
 
 const PROFILE_TRANSITION_MS = 140;
@@ -259,10 +260,11 @@ function showProfileForm(isEditingExisting) {
  */
 async function fetchAndFillProfile() {
   const data = await chrome.storage.local.get('userInfo');
-  const info = data.userInfo || { name: '', role: '' };
+  const info = data.userInfo || { name: '', role: '', sector: '' };
 
   document.getElementById('userName').value = info.name || '';
   document.getElementById('userRole').value = info.role || '';
+  document.getElementById('userSector').value = info.sector || '';
 
   return info;
 }
@@ -285,17 +287,6 @@ async function cancelProfileEdit() {
 }
 
 /**
- * Gera iniciais (ate 2 letras) a partir do nome completo.
- */
-function getInitials(name) {
-  if (!name || !name.trim()) return '?';
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0][0] || '';
-  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-  return (first + last).toUpperCase();
-}
-
-/**
  * Salva o perfil do usuario.
  */
 async function saveUserProfile() {
@@ -305,17 +296,18 @@ async function saveUserProfile() {
   try {
     const name = document.getElementById('userName').value.trim();
     const role = document.getElementById('userRole').value.trim();
+    const sector = document.getElementById('userSector').value.trim();
 
     btn.textContent = 'Salvando...';
     btn.disabled = true;
 
-    await chrome.storage.local.set({ userInfo: { name, role } });
+    await chrome.storage.local.set({ userInfo: { name, role, sector } });
 
     btn.textContent = 'Perfil Salvo';
     btn.classList.add('is-success');
 
     if (name) {
-      renderProfileSummary({ name, role });
+      renderProfileSummary({ name, role, sector });
       showProfileSummary();
     }
 

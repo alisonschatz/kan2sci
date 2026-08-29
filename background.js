@@ -269,7 +269,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getUserInfo') {
     chrome.storage.local.get([CONFIG.STORAGE_KEYS.USER_INFO])
       .then(data => {
-        sendResponse({ userInfo: data.userInfo || { name: '', role: '' } });
+        sendResponse({ userInfo: data.userInfo || { name: '', role: '', sector: '' } });
       });
     return true;
   }

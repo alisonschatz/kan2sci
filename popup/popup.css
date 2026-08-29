@@ -68,7 +68,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px 8px;
+  padding: 10px 16px 6px;
   background: var(--color-surface);
 }
 
@@ -156,8 +156,8 @@ body {
   background: var(--color-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  padding: 10px 14px;
+  margin-bottom: 6px;
 }
 
 .section:last-of-type {
@@ -215,13 +215,19 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--color-accent);
-  color: var(--color-primary-dark);
+  background: #fff;
+  border: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
+  overflow: hidden;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
 }
 
 .profile-summary-text {
@@ -266,13 +272,25 @@ body {
 
 /* Perfil - estado expandido (formulario) */
 .profile-form-fields {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1.1fr 1.5fr 0.9fr;
+  gap: 8px;
 }
 
 .profile-form-fields .form-group {
-  flex: 1;
   min-width: 0;
+}
+
+.profile-form-fields input.form-input {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.profile-form-fields select.form-input {
+  padding-left: 8px;
+  padding-right: 20px;
+  background-position: right 5px center;
+  font-size: 12px;
 }
 
 .profile-form-actions {
@@ -317,6 +335,16 @@ body {
 
 .form-input::placeholder {
   color: var(--color-text-light);
+}
+
+select.form-input {
+  cursor: pointer;
+  background-color: var(--color-bg);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7a99' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 26px;
 }
 
 /* Busca */
@@ -535,14 +563,15 @@ body {
 
 /* Footer */
 .footer {
-  padding: 6px 16px 10px;
+  padding: 3px 16px 6px;
   text-align: center;
   background: var(--color-surface);
 }
 
 .footer p {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--color-text-light);
+  opacity: 0.6;
   font-weight: 500;
 }
 

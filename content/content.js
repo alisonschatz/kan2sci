@@ -4,7 +4,7 @@
   const MAX_LOOKBACK = 60;
 
   let snippetCache = [];
-  let userInfoCache = { name: '', role: '' };
+  let userInfoCache = { name: '', role: '', sector: '' };
   let isExpanding = false;
 
   // Guarda o campo (input/textarea/contentEditable) que estava em foco no
@@ -22,7 +22,7 @@
     try {
       const storage = await chrome.storage.local.get(['teamSnippets', 'userInfo']);
       snippetCache = storage.teamSnippets || [];
-      userInfoCache = storage.userInfo || { name: '', role: '' };
+      userInfoCache = storage.userInfo || { name: '', role: '', sector: '' };
     } catch (err) {
       SCIUtils.log('error', 'Erro ao carregar dados', err);
     }
@@ -36,7 +36,7 @@
       snippetCache = changes.teamSnippets.newValue || [];
     }
     if (changes.userInfo) {
-      userInfoCache = changes.userInfo.newValue || { name: '', role: '' };
+      userInfoCache = changes.userInfo.newValue || { name: '', role: '', sector: '' };
     }
   });
 

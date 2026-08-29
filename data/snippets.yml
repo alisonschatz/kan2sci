@@ -36,8 +36,7 @@ snippets:
 
       ---
       Atenciosamente,
-      {{user_name}}
-      {{user_role}} | {{current_date}}
+      {{assinatura}}
 
 
   - trigger: ":aprovar"
@@ -82,8 +81,7 @@ snippets:
 
       ---
       Atenciosamente,
-      {{user_name}}
-      {{user_role}} | {{current_date}}
+      {{assinatura}}
 
 
   - trigger: ":reprovar"
@@ -130,8 +128,7 @@ snippets:
 
       ---
       Atenciosamente,
-      {{user_name}}
-      {{user_role}} | {{current_date}}
+      {{assinatura}}
 
 
   - trigger: ":impedimento"
@@ -164,8 +161,7 @@ snippets:
 
       ---
       Atenciosamente,
-      {{user_name}}
-      {{user_role}} | {{current_date}}
+      {{assinatura}}
 
 
   - trigger: ":regras"
@@ -191,8 +187,7 @@ snippets:
 
       ---
       Atenciosamente,
-      {{user_name}}
-      {{user_role}} | {{current_date}}
+      {{assinatura}}
 
 
   - trigger: ":finalizarDev"
@@ -215,5 +210,4 @@ snippets:
 
       ---
       Atenciosamente,
-      {{user_name}}
-      {{user_role}} | {{current_date}}
+      {{assinatura}}
