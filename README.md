@@ -1,7 +1,5 @@
 # kan2sci
 
-Extensão Chrome (Manifest V3) para a equipe SCI: expande snippets de texto padronizados em qualquer campo editável da web e automatiza a criação de "Solicitações SCI" a partir do Kanboard.
-
 ## Funcionalidades
 
 - **Expansão de snippets por gatilho** — digite um atalho como `:abrir` em qualquer input, textarea ou editor rico (contentEditable) e o texto é expandido automaticamente.
@@ -101,13 +99,3 @@ Uma seção `## Evidências` (qualquer nível de cabeçalho) é tratada como avi
 | `host_permissions` (`raw.githubusercontent.com`, `s1991.com.br`, `kanboard.sci.com.br`) | Buscar o YAML de snippets e automatizar o formulário real da Intranet. |
 
 Os content scripts de expansão de snippets (`content.js`, `content-assistant.js`) rodam em `<all_urls>`, pois o objetivo é funcionar em qualquer campo de texto da web usado pela equipe.
-
-## Limitações conhecidas
-
-- Em editores rico (contentEditable), um gatilho digitado logo após certas estruturas vazias (ex.: parágrafo recém-criado sem nenhum texto ainda) pode não ser detectado até haver algum texto no nó — limitação da API de `Selection`/`Range` do navegador.
-- O seletor usado para destacar a solicitação criada no board do Kanboard (`.board-column .task-list`) é um placeholder e deve ser ajustado para o seletor real usado pela equipe.
-- A extração do ID da solicitação após a Etapa 1 (`krExtractResultInfo`) é "melhor esforço" via URL/texto da página, pendente de confirmação do HTML real da tela de resultado.
-
-## Versão
-
-`3.1.0` — ver `manifest.json`.
