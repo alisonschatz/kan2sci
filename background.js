@@ -1,9 +1,17 @@
 /**
  * kan2sci — service worker responsavel por sincronizacao, cache e
- * orquestracao de dados dos snippets. A sincronizacao roda 100% em
- * segundo plano (na instalacao, no startup do navegador e a cada
- * CONFIG.SYNC_INTERVAL_MINUTES via chrome.alarms) — nao ha nenhuma
- * acao manual do usuario necessaria.
+ * orquestracao de dados dos snippets, alem da automacao de criacao de
+ * Solicitacoes SCI a partir do Kanboard.
+ *
+ * A sincronizacao de snippets roda 100% em segundo plano (na instalacao,
+ * no startup do navegador e a cada CONFIG.SYNC_INTERVAL_MINUTES via
+ * chrome.alarms) — nao ha nenhuma acao manual do usuario necessaria.
+ *
+ * A automacao de Solicitacao SCI, por outro lado, e disparada sob demanda
+ * pelo modal injetado em content/kanboard-request.js (acao
+ * 'PROCESS_FULL_REQUEST'): abre a pagina real do formulario numa aba em
+ * segundo plano, preenche os campos via DOM e clica em "Confirmar" de
+ * verdade — a propria pagina cuida de qualquer token/validacao escondidos.
  */
 
 importScripts('lib/utils.js', 'lib/yaml-parser.js');
@@ -19,7 +27,7 @@ const CONFIG = {
   GITHUB_YAML_URL: IS_DEV
     ? chrome.runtime.getURL('data/snippets.yml')   // arquivo local na extensão
     : 'https://raw.githubusercontent.com/alisonschatz/sci-snippets/main/snippets.yml',
-  
+
   SYNC_INTERVAL_MINUTES: 30,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY_MS: 2000,
@@ -232,7 +240,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-// Mensagens entre contextos
+// Mensagens entre contextos (snippets, perfil, stats)
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'forceSync') {
     syncSnippets(true).then(result => {
@@ -294,3 +302,374 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 });
+
+/**
+ * ===========================================================
+ * Automacao de Solicitacao SCI (via modal injetado no Kanboard,
+ * content/kanboard-request.js) — abre a pagina real do formulario
+ * numa aba em segundo plano, preenche via DOM e clica em "Confirmar".
+ * ===========================================================
+ */
+
+const KANBOARD_REQUEST_FORM_URL = 'https://www.s1991.com.br/solicitacaoInternoForm.php?sistemaId=43';
+const KR_NAV_TIMEOUT_MS = 20000;
+const KR_POLL_INTERVAL_MS = 300;
+const KR_LOGIN_WAIT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutos pra logar / resolver reCAPTCHA manualmente
+const KR_LOGIN_POLL_INTERVAL_MS = 1000;
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'PROCESS_FULL_REQUEST') {
+    runKanboardRequestAutomation(request.payload)
+      .then(result => sendResponse({ success: true, ...result }))
+      .catch(error => sendResponse({
+        success: false,
+        error: error.message,
+        tabId: error.tabId || null,
+        partial: !!error.partial,
+        solicitacaoId: error.solicitacaoId || null
+      }));
+    return true; // mantém o canal aberto para resposta assíncrona
+  }
+});
+
+async function runKanboardRequestAutomation(payload) {
+  const tab = await chrome.tabs.create({ url: KANBOARD_REQUEST_FORM_URL, active: false });
+  const tabId = tab.id;
+
+  try {
+    // ─── ETAPA 1: criar a solicitação ───────────────────────────────
+    await krWaitForComplete(tabId);
+    await krEnsureOnFormPage(tabId); // espera login manual se a sessão tiver caído
+
+    const fillResult = await krExecInTab(tabId, krFillStep1Form, [payload]);
+    if (!fillResult.ok) throw krTaggedError(fillResult.error, tabId);
+
+    if (payload.anexo) {
+      const attachResult = await krExecInTab(tabId, krAttachFile, [
+        payload.anexo.name, payload.anexo.type, payload.anexo.buffer, 'file'
+      ]);
+      if (!attachResult.ok) throw krTaggedError(attachResult.error, tabId);
+    }
+
+    const beforeUrl1 = (await chrome.tabs.get(tabId)).url;
+
+    const clickResult1 = await krExecInTab(tabId, krClickSubmit, []);
+    if (!clickResult1.ok) throw krTaggedError(clickResult1.error, tabId);
+
+    await krWaitForNavigation(tabId, beforeUrl1);
+
+    const info = await krExecInTab(tabId, krExtractResultInfo, []);
+
+    // ─── ETAPA 2: classificação/criticidade/status ──────────────────
+    // A página real, depois de criar a solicitação, já costuma navegar pra
+    // cá sozinha (mesma aba). Só automatizamos se ela realmente chegou nessa
+    // tela E se o usuário preencheu esses campos no modal.
+    const onStep2Page = await krExecInTab(tabId, krIsStep2Page, []);
+    const hasStep2Data = payload.classificacao && payload.criticidade && payload.statusForm;
+
+    if (onStep2Page && hasStep2Data) {
+      const fillResult2 = await krExecInTab(tabId, krFillStep2Form, [payload]);
+      if (!fillResult2.ok) {
+        const err = krTaggedError(fillResult2.error, tabId);
+        err.partial = true;
+        err.solicitacaoId = info.solicitacaoId;
+        throw err;
+      }
+
+      const beforeUrl2 = (await chrome.tabs.get(tabId)).url;
+
+      const clickResult2 = await krExecInTab(tabId, krClickConfirmStatus, []);
+      if (!clickResult2.ok) {
+        const err = krTaggedError(clickResult2.error, tabId);
+        err.partial = true;
+        err.solicitacaoId = info.solicitacaoId;
+        throw err;
+      }
+
+      await krWaitForNavigation(tabId, beforeUrl2);
+
+      // Tudo automatizado com sucesso — fecha a aba, não precisa de ação manual.
+      try { await chrome.tabs.remove(tabId); } catch (e) { /* aba pode já ter fechado */ }
+
+      return {
+        solicitacaoId: info.solicitacaoId,
+        resultUrl: info.url,
+        manualStep2: false
+      };
+    }
+
+    // Não deu pra automatizar a Etapa 2 (página diferente do esperado, ou o
+    // usuário deixou Classificação/Criticidade/Status em branco no modal) —
+    // traz a aba pra frente pra o usuário terminar manualmente.
+    await chrome.tabs.update(tabId, { active: true });
+
+    return {
+      solicitacaoId: info.solicitacaoId,
+      resultUrl: info.url,
+      tabId,
+      manualStep2: true
+    };
+  } catch (err) {
+    // Não fecha a aba em caso de erro — deixa em foco pra o usuário ver
+    // exatamente o que a página real mostrou, em vez de esconder o problema.
+    try { await chrome.tabs.update(tabId, { active: true }); } catch (e) { /* aba pode já ter sido fechada */ }
+    throw err;
+  }
+}
+
+function krTaggedError(message, tabId) {
+  const err = new Error(message);
+  err.tabId = tabId;
+  return err;
+}
+
+async function krExecInTab(tabId, func, args) {
+  const [{ result }] = await chrome.scripting.executeScript({ target: { tabId }, func, args });
+  return result;
+}
+
+function krWaitForComplete(tabId) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(listener);
+      reject(new Error('A página demorou demais para carregar.'));
+    }, KR_NAV_TIMEOUT_MS);
+
+    function listener(updatedTabId, changeInfo) {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') {
+        clearTimeout(timer);
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve();
+      }
+    }
+    chrome.tabs.onUpdated.addListener(listener);
+
+    // Caso a aba já esteja completa no instante em que começamos a escutar.
+    chrome.tabs.get(tabId).then(tab => {
+      if (tab.status === 'complete') {
+        clearTimeout(timer);
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve();
+      }
+    });
+  });
+}
+
+async function krWaitForNavigation(tabId, previousUrl) {
+  const start = Date.now();
+  while (Date.now() - start < KR_NAV_TIMEOUT_MS) {
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.status === 'complete' && tab.url !== previousUrl) return;
+    await krSleep(KR_POLL_INTERVAL_MS);
+  }
+  throw new Error('A página não navegou depois do clique em Confirmar — pode ter ficado numa tela de erro/validação. Veja a aba aberta.');
+}
+
+function krSleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Garante que a aba chegou no formulário de verdade antes de preencher
+ * qualquer coisa. Se a sessão da Intranet tiver caído, o servidor redireciona
+ * pra tela de login (com reCAPTCHA) em vez do formulário — nesse caso, NÃO
+ * tentamos automatizar o login (reCAPTCHA existe justamente pra impedir
+ * isso). Em vez disso, trazemos a aba pra frente e esperamos o usuário logar
+ * manualmente, verificando a cada segundo se o formulário já apareceu.
+ */
+async function krEnsureOnFormPage(tabId) {
+  let status = await krExecInTab(tabId, krCheckPageStatus, []);
+  if (status.formReady) return;
+
+  if (!status.looksLikeLogin) {
+    // Não é a tela de login nem o formulário — pode já estar logado mas ter
+    // caído em outra tela (ex: dashboard). Tenta ir direto pro formulário
+    // antes de desistir.
+    await chrome.tabs.update(tabId, { url: KANBOARD_REQUEST_FORM_URL });
+    await krWaitForComplete(tabId);
+    status = await krExecInTab(tabId, krCheckPageStatus, []);
+    if (status.formReady) return;
+    if (!status.looksLikeLogin) {
+      throw krTaggedError('A página carregada não é o formulário esperado nem a tela de login. Confira a aba manualmente.', tabId);
+    }
+  }
+
+  // Tela de login confirmada: traz a aba pra frente pro usuário logar (e
+  // resolver o reCAPTCHA) manualmente.
+  await chrome.tabs.update(tabId, { active: true });
+
+  const start = Date.now();
+  let reNavigated = false;
+
+  while (Date.now() - start < KR_LOGIN_WAIT_TIMEOUT_MS) {
+    await krSleep(KR_LOGIN_POLL_INTERVAL_MS);
+
+    const tab = await chrome.tabs.get(tabId);
+    if (tab.status !== 'complete') continue;
+
+    const s = await krExecInTab(tabId, krCheckPageStatus, []);
+    if (s.formReady) return;
+
+    if (!s.looksLikeLogin && !reNavigated) {
+      // Login concluído, mas caiu em outra tela (ex: dashboard) em vez de
+      // voltar pro formulário sozinho — tenta navegar pra lá uma vez.
+      reNavigated = true;
+      await chrome.tabs.update(tabId, { url: KANBOARD_REQUEST_FORM_URL });
+      await krWaitForComplete(tabId);
+    }
+  }
+
+  throw krTaggedError('Login não foi concluído em 5 minutos. Faça login na aba aberta e tente novamente.', tabId);
+}
+
+function krCheckPageStatus() {
+  const formReady = !!document.getElementById('clienteId');
+  const looksLikeLogin = !formReady && !!document.querySelector('input[type="password"]');
+  return { formReady, looksLikeLogin };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FUNÇÕES INJETADAS NA PÁGINA REAL (chrome.scripting.executeScript)
+// Precisam ser autocontidas — não podem referenciar nada fora delas, pois
+// rodam isoladas no contexto da página, não no do service worker.
+// ═══════════════════════════════════════════════════════════════════════
+
+function krFillStep1Form(payload) {
+  function setValue(selector, value) {
+    const el = document.querySelector(selector);
+    if (!el) return false;
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
+  const missing = [];
+  if (!setValue('#clienteId', payload.clienteId)) missing.push('Cliente ID (#clienteId)');
+  if (!setValue('input[name="nomeSolicitante"]', payload.nomeSolicitante)) missing.push('Nome do Solicitante');
+  if (!setValue('#tipoSolicitacao', payload.tipoSolicitacao)) missing.push('Tipo de Solicitação');
+  if (payload.versaoSolicitacao) setValue('input[name="versaoSolicitacao"]', payload.versaoSolicitacao);
+  if (!setValue('#emailParaRetorno', payload.emailParaRetorno)) missing.push('E-mail para Retorno');
+  if (payload.emailParaRetornoPrestador) setValue('#emailParaRetornoPrestador', payload.emailParaRetornoPrestador);
+  if (!setValue('#titulo', payload.titulo)) missing.push('Título');
+  if (!setValue('textarea[name="descricaoSolicitacao"]', payload.descricaoSolicitacao)) missing.push('Descrição');
+  if (payload.comentarioSCI) setValue('textarea[name="comentarioSCI"]', payload.comentarioSCI);
+  if (payload.empresa) setValue('input[name="empresa"]', payload.empresa);
+  if (payload.referencia) setValue('input[name="referencia"]', payload.referencia);
+
+  if (missing.length) {
+    return { ok: false, error: 'Campo(s) não encontrado(s) na página (pode ter mudado de estrutura): ' + missing.join(', ') };
+  }
+  return { ok: true };
+}
+
+function krAttachFile(fileName, fileType, bufferArray, inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return { ok: false, error: `Campo de anexo (#${inputId}) não encontrado na página.` };
+  try {
+    const bytes = new Uint8Array(bufferArray);
+    const file = new File([bytes], fileName, { type: fileType || 'application/octet-stream' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: 'Falha ao anexar arquivo: ' + err.message };
+  }
+}
+
+function krClickSubmit() {
+  const btn = document.getElementById('btnSubmit');
+  if (!btn) return { ok: false, error: 'Botão "Confirmar" (#btnSubmit) não encontrado na página.' };
+  btn.click();
+  return { ok: true };
+}
+
+/**
+ * Detecta se a aba já está na tela de Classificação/Criticidade/Status
+ * (a página que sobra depois de criar a solicitação).
+ */
+function krIsStep2Page() {
+  return !!document.getElementById('btnConfirmaStatus');
+}
+
+/**
+ * Preenche Classificação/Criticidade/Status na tela de Etapa 2.
+ *
+ * Os valores de "statusForm" precisam ser o TEXTO do option (ex: "Pertinente"),
+ * não o código numérico — o código só existe no atributo "alt" da option, que
+ * não é enviado no formulário. Além disso, boa parte dos status nascem
+ * disabled (só os que fazem sentido a partir do status atual ficam
+ * clicáveis); se o valor pedido corresponder a uma option desabilitada, o
+ * <select> simplesmente não muda e isso é reportado como erro aqui.
+ */
+function krFillStep2Form(payload) {
+  function setSelect(selector, value) {
+    const el = document.querySelector(selector);
+    if (!el) return { ok: false, reason: 'campo não encontrado' };
+
+    const option = Array.from(el.options).find(o => o.value === value);
+    if (!option) return { ok: false, reason: 'opção não existe' };
+    if (option.disabled) return { ok: false, reason: 'opção desabilitada nesse estado atual da solicitação' };
+
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return { ok: true };
+  }
+
+  const problems = [];
+
+  const r1 = setSelect('#classificacao', payload.classificacao);
+  if (!r1.ok) problems.push(`Classificação (${r1.reason})`);
+
+  const r2 = setSelect('#criticidade', payload.criticidade);
+  if (!r2.ok) problems.push(`Criticidade (${r2.reason})`);
+
+  const r3 = setSelect('#statusForm', payload.statusForm);
+  if (!r3.ok) problems.push(`Status (${r3.reason})`);
+
+  if (problems.length) {
+    return { ok: false, error: 'Falha ao preencher a Etapa 2: ' + problems.join('; ') };
+  }
+  return { ok: true };
+}
+
+/**
+ * Clica em "Confirmar e alterar status". O botão nasce com o atributo
+ * disabled e alguma validação JS da própria página é quem o habilita — como
+ * já garantimos que os campos obrigatórios estão certos, removemos o
+ * disabled diretamente antes de clicar, em vez de tentar adivinhar qual
+ * evento exato a página escuta para habilitá-lo sozinha.
+ */
+function krClickConfirmStatus() {
+  const btn = document.getElementById('btnConfirmaStatus');
+  if (!btn) return { ok: false, error: 'Botão "Confirmar e alterar status" (#btnConfirmaStatus) não encontrado.' };
+  if (btn.disabled) btn.disabled = false;
+  btn.click();
+  return { ok: true };
+}
+
+/**
+ * ⚠️ MELHOR ESFORÇO / NÃO CONFIRMADO: ainda não vimos o HTML da página que
+ * aparece depois de confirmar. Tentamos achar o ID pela URL e, se não achar,
+ * por um padrão de texto no corpo da página. Assim que soubermos o formato
+ * real, esta função deve ser trocada por algo específico (ex: ler um campo
+ * ou elemento exato da tela de resultado).
+ */
+function krExtractResultInfo() {
+  const url = location.href;
+  let solicitacaoId = null;
+
+  const urlMatch = url.match(/solicitacaoId=(\d{3,7})/i);
+  if (urlMatch) solicitacaoId = urlMatch[1];
+
+  if (!solicitacaoId) {
+    const bodyText = document.body ? document.body.innerText || '' : '';
+    const textMatch = bodyText.match(/solicita[cç][aã]o[^\d]{0,20}(\d{4,7})/i);
+    if (textMatch) solicitacaoId = textMatch[1];
+  }
+
+  return { solicitacaoId, url, title: document.title };
+}

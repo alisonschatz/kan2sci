@@ -1,15 +1,19 @@
 {
   "manifest_version": 3,
   "name": "kan2sci",
-  "version": "3.0.0",
-  "description": "Snippets inteligentes com sincronização automática para tickets do Kanboard - equipe SCI.",
+  "version": "3.1.0",
+  "description": "Snippets inteligentes com sincronização automática + criação de Solicitações SCI direto do Kanboard - equipe SCI.",
   "permissions": [
     "storage",
     "alarms",
-    "contextMenus"
+    "contextMenus",
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
-    "https://raw.githubusercontent.com/*"
+    "https://raw.githubusercontent.com/*",
+    "https://www.s1991.com.br/*",
+    "https://kanboard.sci.com.br/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,6 +26,17 @@
         "lib/yaml-parser.js",
         "content/content-assistant.js",
         "content/content.js"
+      ],
+      "run_at": "document_end",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://kanboard.sci.com.br/*"],
+      "js": [
+        "content/kanboard-request.js"
+      ],
+      "css": [
+        "content/kanboard-request.css"
       ],
       "run_at": "document_end",
       "all_frames": false

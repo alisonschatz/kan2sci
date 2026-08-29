@@ -3,6 +3,16 @@
 
   const MAX_LOOKBACK = 60;
 
+  // Hosts de Shadow DOM próprios da extensão cujos eventos 'input' internos
+  // devem ser ignorados pela expansão de snippets. Por causa do "event
+  // retargeting" do Shadow DOM em listeners no document, e.target aparece
+  // como o próprio elemento host do modal (não o input real dentro dele) —
+  // então basta checar o id do host pra ignorar esses eventos.
+  const IGNORED_INPUT_HOST_IDS = new Set([
+    'kan2sci-assistant',          // modal interativo de snippets
+    'kan2sci-kanboard-request-host' // modal de Nova Solicitação SCI (Kanboard)
+  ]);
+
   let snippetCache = [];
   let userInfoCache = { name: '', role: '', sector: '' };
   let isExpanding = false;
@@ -209,12 +219,11 @@
     if (e.isComposing) return;
     if (!snippetCache.length) return;
 
-    // O evento 'input' disparado dentro da Shadow DOM do modal assistente
-    // (kan2sci-assistant) também é observado aqui, pois é "composed".
-    // Por causa do "event retargeting" do Shadow DOM, e.target aparece
-    // como o próprio elemento host do modal (não o input real dentro dele),
-    // então basta checar o id do host para ignorar esses eventos.
-    if (e.target && e.target.id === 'kan2sci-assistant') return;
+    // Eventos 'input' disparados dentro da Shadow DOM de modais próprios da
+    // extensão (assistente de snippets, Nova Solicitação SCI) também são
+    // observados aqui, pois são "composed". Ignora-os pelo id do host —
+    // ver IGNORED_INPUT_HOST_IDS.
+    if (e.target && IGNORED_INPUT_HOST_IDS.has(e.target.id)) return;
 
     const target = getActiveTextElement();
     if (!target) return;

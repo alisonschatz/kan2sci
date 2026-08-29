@@ -1,0 +1,57 @@
+/* kan2sci — botão flutuante e toast de "Nova Solicitação SCI" no Kanboard.
+   Injetado fora do Shadow DOM do modal (ver content/kanboard-request.js),
+   por isso usa a mesma paleta navy/blue do restante da extensão diretamente. */
+
+#kan2sci-kanboard-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147482900;
+  background: #38486c;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 6px 20px rgba(56, 72, 108, 0.35);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+#kan2sci-kanboard-fab:hover {
+  background: #2a3652;
+  transform: translateY(-1px);
+}
+
+#kan2sci-kanboard-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2e7d32;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  z-index: 2147483100;
+  animation: kan2sci-kanboard-toast-in 0.2s ease;
+}
+
+@keyframes kan2sci-kanboard-toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.kan2sci-kanboard-new-row {
+  animation: kan2sci-kanboard-highlight 2s ease;
+}
+
+@keyframes kan2sci-kanboard-highlight {
+  from { background: #fff6d8; }
+  to { background: transparent; }
+}
