@@ -196,9 +196,84 @@
   @media (max-width: 400px) {
     .card { padding: 28px 22px; }
   }
+
+  .page-nav {
+    max-width: 460px;
+    margin: 0 auto 14px;
+    text-align: right;
+  }
+
+  .page-nav a {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .page-nav a:hover { color: var(--navy); text-decoration: underline; }
+
+  .privacy-card {
+    width: 100%;
+    max-width: 460px;
+    margin: 20px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 32px;
+    scroll-margin-top: 24px;
+  }
+
+  .privacy-card h1 {
+    font-size: 17px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .privacy-card .privacy-updated {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 22px;
+  }
+
+  .privacy-card h3 {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--navy);
+    margin: 20px 0 8px;
+  }
+
+  .privacy-card h3:first-of-type { margin-top: 0; }
+
+  .privacy-card p,
+  .privacy-card li {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .privacy-card ul {
+    padding-left: 20px;
+    margin-top: 6px;
+  }
+
+  .privacy-card li { margin-bottom: 4px; }
+
+  .privacy-card code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--navy);
+  }
 </style>
 </head>
 <body>
+
+  <div class="page-nav">
+    <a href="#privacidade">Política de Privacidade &rarr;</a>
+  </div>
 
   <div class="card">
     <button class="btn-download" id="downloadBtn" onclick="downloadExtensionZip()">
@@ -256,6 +331,55 @@
       </ol>
     </div>
   </div>
+
+  <section class="privacy-card" id="privacidade">
+    <h1>Pol&iacute;tica de Privacidade &mdash; kan2sci</h1>
+    <p class="privacy-updated">&Uacute;ltima atualiza&ccedil;&atilde;o: agosto de 2026</p>
+
+    <p>
+      O kan2sci &eacute; uma extens&atilde;o de uso interno da equipe SCI (Sistemas
+      Cont&aacute;beis) para padronizar a cria&ccedil;&atilde;o de cards no Kanboard e
+      automatizar a abertura de Solicita&ccedil;&otilde;es SCI na Intranet da empresa. Esta
+      p&aacute;gina descreve quais dados a extens&atilde;o acessa, como s&atilde;o usados e
+      onde ficam armazenados.
+    </p>
+
+    <h3>Dados armazenados localmente</h3>
+    <p>A extens&atilde;o guarda os seguintes dados apenas no seu pr&oacute;prio navegador (<code>chrome.storage.local</code>), nunca em servidores externos da SCI ou de terceiros:</p>
+    <ul>
+      <li><strong>Perfil do usu&aacute;rio:</strong> nome, cargo e setor informados por voc&ecirc;, usados para preencher a assinatura dos templates.</li>
+      <li><strong>Cache de templates (snippets):</strong> c&oacute;pia local da lista de templates, para uso offline e resposta r&aacute;pida.</li>
+      <li><strong>Estat&iacute;sticas de uso:</strong> contagem de quantas vezes cada template foi usado, para exibir os &ldquo;mais usados&rdquo; no pr&oacute;prio navegador.</li>
+      <li><strong>Status de sincroniza&ccedil;&atilde;o:</strong> data/hora da &uacute;ltima atualiza&ccedil;&atilde;o da lista de templates.</li>
+    </ul>
+    <p>Nenhum desses dados &eacute; enviado para fora do seu navegador, exceto nas duas situa&ccedil;&otilde;es abaixo.</p>
+
+    <h3>Comunica&ccedil;&otilde;es externas</h3>
+    <ul>
+      <li><strong>Sincroniza&ccedil;&atilde;o de templates:</strong> a extens&atilde;o busca periodicamente um arquivo de templates hospedado no GitHub. Essa busca n&atilde;o envia nenhum dado seu &mdash; &eacute; uma leitura p&uacute;blica, como abrir uma p&aacute;gina.</li>
+      <li><strong>Automa&ccedil;&atilde;o de Solicita&ccedil;&atilde;o SCI:</strong> ao usar o formul&aacute;rio &ldquo;Nova Solicita&ccedil;&atilde;o SCI&rdquo; no Kanboard, os dados que voc&ecirc; digita s&atilde;o enviados diretamente para o sistema real da Intranet da SCI (o mesmo destino de quando voc&ecirc; preenche o formul&aacute;rio manualmente) &mdash; a extens&atilde;o apenas automatiza esse preenchimento numa aba do seu pr&oacute;prio navegador.</li>
+    </ul>
+
+    <h3>O que a extens&atilde;o n&atilde;o faz</h3>
+    <ul>
+      <li>N&atilde;o coleta dados para publicidade ou analytics de terceiros.</li>
+      <li>N&atilde;o vende, aluga ou compartilha dados com terceiros.</li>
+      <li>N&atilde;o l&ecirc; o conte&uacute;do de campos de texto fora do momento em que voc&ecirc; digita um atalho de template ou usa o menu de contexto.</li>
+      <li>N&atilde;o funciona nem coleta dados sem que voc&ecirc; instale a extens&atilde;o manualmente.</li>
+    </ul>
+
+    <h3>Por que a extens&atilde;o pede certas permiss&otilde;es</h3>
+    <ul>
+      <li><code>storage</code> &mdash; guardar templates, perfil e estat&iacute;sticas localmente.</li>
+      <li><code>alarms</code> &mdash; agendar a sincroniza&ccedil;&atilde;o peri&oacute;dica em segundo plano.</li>
+      <li><code>contextMenus</code> &mdash; oferecer o menu de bot&atilde;o direito para inserir templates.</li>
+      <li><code>scripting</code> e <code>tabs</code> &mdash; preencher o formul&aacute;rio real da Intranet numa aba de segundo plano, apenas quando voc&ecirc; aciona a automa&ccedil;&atilde;o.</li>
+      <li>Acesso a <code>kanboard.sci.com.br</code> e aos sistemas internos da SCI &mdash; necess&aacute;rio para a automa&ccedil;&atilde;o de Solicita&ccedil;&atilde;o SCI funcionar nesses dom&iacute;nios espec&iacute;ficos.</li>
+    </ul>
+
+    <h3>Contato</h3>
+    <p>D&uacute;vidas sobre esta pol&iacute;tica ou sobre o uso de dados podem ser enviadas para <strong>[e-mail de contato da equipe SCI]</strong>.</p>
+  </section>
 
   <script>
     async function copyText(text) {
