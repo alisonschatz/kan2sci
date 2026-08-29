@@ -196,6 +196,13 @@
     if (e.isComposing) return;
     if (!snippetCache.length) return;
 
+    // O evento 'input' disparado dentro da Shadow DOM do modal assistente
+    // (kan2sci-assistant) também é observado aqui, pois é "composed".
+    // Por causa do "event retargeting" do Shadow DOM, e.target aparece
+    // como o próprio elemento host do modal (não o input real dentro dele),
+    // então basta checar o id do host para ignorar esses eventos.
+    if (e.target && e.target.id === 'kan2sci-assistant') return;
+
     const target = getActiveTextElement();
     if (!target) return;
 
@@ -226,5 +233,5 @@
 
   document.addEventListener('input', handleInput, true);
 
-  console.log('[SCI Snippets] Content script ativo. Modal interativo pronto.');
+  console.log('[kan2sci] Content script ativo. Modal interativo pronto.');
 })();

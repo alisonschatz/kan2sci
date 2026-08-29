@@ -72,40 +72,6 @@ body {
   border: 1px solid var(--color-border);
 }
 
-.sync-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
-.sync-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-warning);
-  transition: background 0.3s ease;
-}
-
-.sync-dot.online {
-  background: var(--color-success);
-}
-
-.sync-dot.offline {
-  background: var(--color-error);
-}
-
-.sync-dot.syncing {
-  background: var(--color-accent);
-  animation: pulse 1.2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
 /* Main */
 .main {
   padding: 0;

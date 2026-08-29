@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SCI Snippets</title>
+<title>kan2sci</title>
 <link rel="icon" type="image/png" href="icons/icon48.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -313,9 +313,8 @@
         const textFiles = [
           'manifest.json', 'background.js', 'content.js',
           'popup.html', 'popup.js',
-          'options.html', 'options.js',
-          'lib/utils.js', 'lib/yaml-parser.js',
-          'styles/popup.css', 'styles/options.css'
+          'lib/utils.js', 'lib/yaml-parser.js', 'lib/content-assistant.js',
+          'styles/popup.css', 'snippets.yml'
         ];
 
         const binaryFiles = [
@@ -349,7 +348,7 @@
         const blob = await zip.generateAsync({ type: 'blob' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'sci-snippets.zip';
+        a.download = 'kan2sci.zip';
         a.click();
 
         status.textContent = 'Download iniciado.';

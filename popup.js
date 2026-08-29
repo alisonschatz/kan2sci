@@ -1,6 +1,12 @@
 /**
- * Controla a interface do popup: perfil, listagem, busca e sincronizacao.
+ * kan2sci — controla a interface do popup: perfil, listagem e busca.
  * Le dados diretamente do storage local para evitar dependencia do service worker.
+ *
+ * Nao ha botao de sincronizar: a sincronizacao roda inteiramente em segundo
+ * plano (background.js, via chrome.alarms). Ao abrir o popup, apenas
+ * disparamos um pedido de sincronizacao "silencioso" (sem UI de status) como
+ * reforco, e ouvimos mudancas no storage para refletir a lista assim que
+ * ela for atualizada, mesmo que isso aconteca enquanto o popup esta aberto.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -14,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initializePopup() {
   await loadUserProfile();
   await loadSnippets();
-  await updateSyncStatus();
+  triggerBackgroundSync();
 }
 
 /**
@@ -24,10 +30,38 @@ function setupEventListeners() {
   document.getElementById('saveProfileBtn').addEventListener('click', saveUserProfile);
   document.getElementById('profileEditBtn').addEventListener('click', () => showProfileForm(true));
   document.getElementById('cancelProfileBtn').addEventListener('click', cancelProfileEdit);
-  document.getElementById('syncBtn').addEventListener('click', handleSync);
-  document.getElementById('openOptionsBtn').addEventListener('click', openOptionsPage);
   document.getElementById('snippetSearch').addEventListener('input', handleSearch);
 }
+
+/**
+ * Pede ao background para sincronizar agora, de forma totalmente silenciosa
+ * (sem indicador, sem bloquear a UI). Serve como reforco alem do alarme
+ * periodico, cobrindo o caso do navegador ter ficado fechado por muito tempo.
+ * Erros sao ignorados propositalmente: se o service worker estiver inativo
+ * no momento, a sincronizacao periodica agendada cobre isso mais tarde.
+ */
+function triggerBackgroundSync() {
+  try {
+    chrome.runtime.sendMessage({ action: 'forceSync' }, () => {
+      void chrome.runtime.lastError; // ignora silenciosamente
+    });
+  } catch (err) {
+    // noop — popup continua funcional mesmo sem conseguir falar com o background
+  }
+}
+
+/**
+ * Mantem a lista de snippets em dia caso uma sincronizacao termine
+ * enquanto o popup ainda esta aberto.
+ */
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (changes.teamSnippets) {
+    const snippets = changes.teamSnippets.newValue || [];
+    renderSnippetList(snippets);
+    updateCount(snippets.length);
+  }
+});
 
 /**
  * Carrega o perfil do usuario e decide o estado inicial da secao:
@@ -45,7 +79,7 @@ async function loadUserProfile() {
       setProfileView('form');
     }
   } catch (err) {
-    console.error('[SCI Popup] Erro ao carregar perfil:', err);
+    console.error('[kan2sci] Erro ao carregar perfil:', err);
     setProfileView('form');
   }
 }
@@ -137,7 +171,7 @@ async function cancelProfileEdit() {
       showProfileForm(false);
     }
   } catch (err) {
-    console.error('[SCI Popup] Erro ao cancelar edicao:', err);
+    console.error('[kan2sci] Erro ao cancelar edicao:', err);
   }
 }
 
@@ -182,7 +216,7 @@ async function saveUserProfile() {
       btn.disabled = false;
     }, 500);
   } catch (err) {
-    console.error('[SCI Popup] Erro ao salvar perfil:', err);
+    console.error('[kan2sci] Erro ao salvar perfil:', err);
     btn.textContent = 'Erro ao Salvar';
     btn.style.background = '#c62828';
     setTimeout(() => {
@@ -203,102 +237,9 @@ async function loadSnippets() {
     renderSnippetList(snippets);
     updateCount(snippets.length);
   } catch (err) {
-    console.error('[SCI Popup] Erro ao carregar snippets:', err);
-    showEmptyState('Erro ao carregar snippets', 'Tente sincronizar novamente.');
+    console.error('[kan2sci] Erro ao carregar snippets:', err);
+    showEmptyState('Erro ao carregar snippets', 'A sincronizacao automatica tenta novamente em breve.');
     updateCount(0);
-  }
-}
-
-/**
- * Atualiza o indicador de status lendo diretamente do storage.
- */
-async function updateSyncStatus() {
-  try {
-    const data = await chrome.storage.local.get(['syncStatus', 'lastSync']);
-    const status = data.syncStatus;
-
-    if (!status) {
-      setSyncStatus('offline', 'Nunca sincronizado');
-      return;
-    }
-
-    if (status.success) {
-      const lastSync = data.lastSync
-        ? new Date(data.lastSync).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        : '';
-      setSyncStatus('online', lastSync ? `Sincronizado as ${lastSync}` : 'Sincronizado');
-    } else {
-      setSyncStatus('offline', 'Falha na ultima sincronizacao');
-    }
-  } catch (err) {
-    console.error('[SCI Popup] Erro ao ler status:', err);
-    setSyncStatus('offline', 'Indisponivel');
-  }
-}
-
-/**
- * Envia mensagem para o background com timeout e tratamento de erro.
- */
-function sendMessage(message, timeoutMs = 5000) {
-  return new Promise((resolve, reject) => {
-    let resolved = false;
-
-    const timer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true;
-        reject(new Error('Tempo de resposta excedido. Service worker pode estar inativo.'));
-      }
-    }, timeoutMs);
-
-    try {
-      chrome.runtime.sendMessage(message, (response) => {
-        if (resolved) return;
-        resolved = true;
-        clearTimeout(timer);
-
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else {
-          resolve(response || {});
-        }
-      });
-    } catch (err) {
-      if (!resolved) {
-        resolved = true;
-        clearTimeout(timer);
-        reject(err);
-      }
-    }
-  });
-}
-
-/**
- * Executa sincronizacao manual via background com timeout.
- */
-async function handleSync() {
-  const btn = document.getElementById('syncBtn');
-  const originalText = btn.textContent;
-
-  try {
-    setSyncStatus('syncing', 'Sincronizando...');
-    btn.textContent = 'Sincronizando...';
-    btn.disabled = true;
-
-    const response = await sendMessage({ action: 'forceSync' }, 10000);
-
-    if (response.status === 'success') {
-      setSyncStatus('online', 'Sincronizado');
-      await loadSnippets();
-      await updateSyncStatus();
-    } else {
-      setSyncStatus('offline', 'Falha na sincronizacao');
-    }
-  } catch (err) {
-    console.error('[SCI Popup] Erro na sincronizacao:', err);
-    setSyncStatus('offline', 'Service worker inativo');
-  } finally {
-    btn.textContent = originalText;
-    btn.disabled = false;
   }
 }
 
@@ -309,7 +250,7 @@ function renderSnippetList(snippets) {
   const container = document.getElementById('snippetContainer');
 
   if (!snippets || snippets.length === 0) {
-    showEmptyState('Nenhum snippet carregado', 'Clique em sincronizar para atualizar.');
+    showEmptyState('Nenhum snippet carregado', 'A sincronizacao automatica atualiza a lista em segundo plano.');
     return;
   }
 
@@ -386,17 +327,6 @@ function handleSearch(e) {
 }
 
 /**
- * Abre a pagina de opcoes.
- */
-function openOptionsPage() {
-  if (chrome.runtime.openOptionsPage) {
-    chrome.runtime.openOptionsPage();
-  } else {
-    window.open(chrome.runtime.getURL('options.html'));
-  }
-}
-
-/**
  * Exibe estado vazio na lista.
  */
 function showEmptyState(title, subtitle) {
@@ -414,18 +344,6 @@ function showEmptyState(title, subtitle) {
  */
 function updateCount(count) {
   document.getElementById('snippetCount').textContent = count;
-}
-
-/**
- * Define o estado visual do indicador de sync.
- */
-function setSyncStatus(state, text) {
-  const dot = document.getElementById('syncDot');
-  const label = document.getElementById('syncText');
-
-  dot.className = 'sync-dot';
-  if (state) dot.classList.add(state);
-  label.textContent = text;
 }
 
 function escapeHtml(str) {

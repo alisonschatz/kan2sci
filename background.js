@@ -1,5 +1,9 @@
 /**
- * Responsavel por sincronizacao, cache e orquestracao de dados.
+ * kan2sci — service worker responsavel por sincronizacao, cache e
+ * orquestracao de dados dos snippets. A sincronizacao roda 100% em
+ * segundo plano (na instalacao, no startup do navegador e a cada
+ * CONFIG.SYNC_INTERVAL_MINUTES via chrome.alarms) — nao ha nenhuma
+ * acao manual do usuario necessaria.
  */
 
 importScripts('lib/utils.js', 'lib/yaml-parser.js');

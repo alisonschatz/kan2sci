@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "SCI Snippets",
-  "version": "2.2.0",
-  "description": "Sincronização centralizada de snippets e atalhos para equipes SCI.",
+  "name": "kan2sci",
+  "version": "3.0.0",
+  "description": "Snippets inteligentes com sincronização automática para tickets do Kanboard - equipe SCI.",
   "permissions": [
     "storage",
     "alarms"
@@ -28,13 +28,12 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "SCI Snippets",
+    "default_title": "kan2sci",
     "default_icon": {
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
-  "options_page": "options.html",
   "icons": {
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"

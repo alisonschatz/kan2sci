@@ -3,18 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SCI Snippets</title>
+  <title>kan2sci</title>
   <link rel="stylesheet" href="styles/popup.css">
 </head>
 <body>
   <header class="header">
     <div class="brand">
-      <span class="brand-name">SCI Snippets</span>
-      <span class="brand-version">v2.0</span>
-    </div>
-    <div class="sync-indicator" id="syncIndicator" title="Status da sincronizacao">
-      <span class="sync-dot" id="syncDot"></span>
-      <span class="sync-text" id="syncText">Verificando...</span>
+      <span class="brand-name">kan2sci</span>
+      <span class="brand-version">v3.0</span>
     </div>
   </header>
 
@@ -70,24 +66,14 @@
       <div class="snippet-list" id="snippetContainer">
         <div class="empty-state" id="emptyState">
           <p class="empty-text">Nenhum snippet carregado.</p>
-          <p class="empty-sub">Clique em sincronizar para atualizar.</p>
+          <p class="empty-sub">A sincronizacao automatica atualiza a lista em segundo plano.</p>
         </div>
       </div>
-    </section>
-
-    <!-- Acoes -->
-    <section class="section actions-section">
-      <button id="syncBtn" class="btn btn-secondary btn-full">
-        Sincronizar
-      </button>
-      <button id="openOptionsBtn" class="btn btn-ghost btn-full">
-        Configuracoes Avancadas
-      </button>
     </section>
   </main>
 
   <footer class="footer">
-    <p>SCI Sistemas Contabeis</p>
+    <p>kan2sci &middot; SCI Sistemas Contabeis</p>
   </footer>
 
   <script src="popup.js"></script>
