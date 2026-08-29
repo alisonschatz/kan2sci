@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kan2sci &mdash; Pol&iacute;tica de Privacidade</title>
+<style>
+  :root {
+    --navy: #38486c;
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --text: #38486c;
+    --text-muted: #6b7a99;
+    --text-light: #9aa4b8;
+    --border: #d8dde8;
+    --radius-lg: 14px;
+    --shadow: 0 4px 24px rgba(56, 72, 108, 0.10);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    padding: 48px 20px;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 620px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 40px;
+  }
+
+  .back-link {
+    display: block;
+    max-width: 620px;
+    margin: 0 auto 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .back-link:hover { color: var(--navy); text-decoration: underline; }
+
+  h1 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+
+  .updated { font-size: 12px; color: var(--text-light); margin-bottom: 24px; }
+
+  h3 {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--navy);
+    margin: 24px 0 8px;
+  }
+
+  h3:first-of-type { margin-top: 0; }
+
+  p, li { font-size: 13.5px; color: var(--text-muted); }
+
+  ul { padding-left: 20px; margin-top: 6px; }
+
+  li { margin-bottom: 5px; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--navy);
+  }
+</style>
+</head>
+<body>
+
+  <a class="back-link" href="index.html">&larr; Voltar</a>
+
+  <div class="card">
+    <h1>Pol&iacute;tica de Privacidade &mdash; kan2sci</h1>
+    <p class="updated">&Uacute;ltima atualiza&ccedil;&atilde;o: agosto de 2026</p>
+
+    <p>
+      O kan2sci &eacute; uma extens&atilde;o de uso interno da equipe SCI (Sistemas
+      Cont&aacute;beis) para padronizar a cria&ccedil;&atilde;o de cards no Kanboard e
+      automatizar a abertura de Solicita&ccedil;&otilde;es SCI na Intranet da empresa. Esta
+      p&aacute;gina descreve quais dados a extens&atilde;o acessa, como s&atilde;o usados e
+      onde ficam armazenados.
+    </p>
+
+    <h3>Dados armazenados localmente</h3>
+    <p>A extens&atilde;o guarda os seguintes dados apenas no seu pr&oacute;prio navegador (<code>chrome.storage.local</code>), nunca em servidores externos da SCI ou de terceiros:</p>
+    <ul>
+      <li><strong>Perfil do usu&aacute;rio:</strong> nome, cargo e setor informados por voc&ecirc;, usados para preencher a assinatura dos templates.</li>
+      <li><strong>Cache de templates (snippets):</strong> c&oacute;pia local da lista de templates, para uso offline e resposta r&aacute;pida.</li>
+      <li><strong>Estat&iacute;sticas de uso:</strong> contagem de quantas vezes cada template foi usado, para exibir os &ldquo;mais usados&rdquo; no pr&oacute;prio navegador.</li>
+      <li><strong>Status de sincroniza&ccedil;&atilde;o:</strong> data/hora da &uacute;ltima atualiza&ccedil;&atilde;o da lista de templates.</li>
+    </ul>
+    <p>Nenhum desses dados &eacute; enviado para fora do seu navegador, exceto nas duas situa&ccedil;&otilde;es abaixo.</p>
+
+    <h3>Comunica&ccedil;&otilde;es externas</h3>
+    <ul>
+      <li><strong>Sincroniza&ccedil;&atilde;o de templates:</strong> a extens&atilde;o busca periodicamente um arquivo de templates hospedado no GitHub. Essa busca n&atilde;o envia nenhum dado seu &mdash; &eacute; uma leitura p&uacute;blica, como abrir uma p&aacute;gina.</li>
+      <li><strong>Automa&ccedil;&atilde;o de Solicita&ccedil;&atilde;o SCI:</strong> ao usar o formul&aacute;rio &ldquo;Nova Solicita&ccedil;&atilde;o SCI&rdquo; no Kanboard, os dados que voc&ecirc; digita s&atilde;o enviados diretamente para o sistema real da Intranet da SCI (o mesmo destino de quando voc&ecirc; preenche o formul&aacute;rio manualmente) &mdash; a extens&atilde;o apenas automatiza esse preenchimento numa aba do seu pr&oacute;prio navegador.</li>
+    </ul>
+
+    <h3>O que a extens&atilde;o n&atilde;o faz</h3>
+    <ul>
+      <li>N&atilde;o coleta dados para publicidade ou analytics de terceiros.</li>
+      <li>N&atilde;o vende, aluga ou compartilha dados com terceiros.</li>
+      <li>N&atilde;o l&ecirc; o conte&uacute;do de campos de texto fora do momento em que voc&ecirc; digita um atalho de template ou usa o menu de contexto.</li>
+      <li>N&atilde;o funciona nem coleta dados sem que voc&ecirc; instale a extens&atilde;o manualmente.</li>
+    </ul>
+
+    <h3>Por que a extens&atilde;o pede certas permiss&otilde;es</h3>
+    <ul>
+      <li><code>storage</code> &mdash; guardar templates, perfil e estat&iacute;sticas localmente.</li>
+      <li><code>alarms</code> &mdash; agendar a sincroniza&ccedil;&atilde;o peri&oacute;dica em segundo plano.</li>
+      <li><code>contextMenus</code> &mdash; oferecer o menu de bot&atilde;o direito para inserir templates.</li>
+      <li><code>scripting</code> e <code>tabs</code> &mdash; preencher o formul&aacute;rio real da Intranet numa aba de segundo plano, apenas quando voc&ecirc; aciona a automa&ccedil;&atilde;o.</li>
+      <li>Acesso a <code>kanboard.sci.com.br</code> e aos sistemas internos da SCI &mdash; necess&aacute;rio para a automa&ccedil;&atilde;o de Solicita&ccedil;&atilde;o SCI funcionar nesses dom&iacute;nios espec&iacute;ficos.</li>
+    </ul>
+
+    <h3>Contato</h3>
+    <p>D&uacute;vidas sobre esta pol&iacute;tica ou sobre o uso de dados podem ser enviadas para <strong>[e-mail de contato da equipe SCI]</strong>.</p>
+  </div>
+
+</body>
+</html>
