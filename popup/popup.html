@@ -12,6 +12,10 @@
       <span class="brand-name">kan2sci</span>
       <span class="brand-version">v3.0</span>
     </div>
+    <div class="sync-indicator" id="syncIndicator" title="Sincroniza&ccedil;&atilde;o autom&aacute;tica em segundo plano">
+      <span class="sync-dot" id="syncDot" aria-hidden="true"></span>
+      <span class="sync-label" id="syncLabel" aria-live="polite">Verificando&hellip;</span>
+    </div>
   </header>
 
   <main class="main">
@@ -61,7 +65,8 @@
         <span class="count-badge" id="snippetCount">0</span>
       </div>
       <div class="search-box">
-        <input type="text" id="snippetSearch" class="form-input search-input" placeholder="Pesquisar snippets..." autocomplete="off">
+        <input type="text" id="snippetSearch" class="form-input search-input" placeholder="Pesquisar por nome ou atalho..." autocomplete="off" aria-label="Pesquisar snippets">
+        <button type="button" class="search-clear" id="searchClear" aria-label="Limpar pesquisa" hidden>&times;</button>
       </div>
       <div class="snippet-list" id="snippetContainer">
         <div class="empty-state" id="emptyState">

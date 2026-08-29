@@ -9,15 +9,27 @@
   --color-text-muted: #6b7a99;
   --color-text-light: #9aa4b8;
   --color-success: #2e7d32;
+  --color-success-bg: rgba(46, 125, 50, 0.1);
   --color-error: #c62828;
-  --color-warning: #f9a825;
+  --color-error-bg: rgba(198, 40, 40, 0.1);
+  --color-warning: #b8860b;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
+  --radius-full: 999px;
   --shadow-sm: 0 1px 3px rgba(56, 72, 108, 0.08);
   --shadow-md: 0 2px 8px rgba(56, 72, 108, 0.1);
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 * {
@@ -37,6 +49,18 @@ body {
   line-height: 1.5;
   color: var(--color-text);
   background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visivel e consistente em qualquer elemento interativo navegado por teclado */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* Header */
@@ -44,7 +68,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px 6px;
+  padding: 12px 16px 8px;
   background: var(--color-surface);
 }
 
@@ -55,20 +79,72 @@ body {
 }
 
 .brand-name {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 15px;
   color: var(--color-primary);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
 }
 
 .brand-version {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--color-text-light);
   background: var(--color-bg);
   padding: 1px 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
+  letter-spacing: 0.2px;
+}
+
+/*
+ * Indicador de sincronizacao — a extensao sincroniza 100% em segundo plano,
+ * entao esta e a UNICA pista visual de que isso esta de fato acontecendo.
+ * Sem ela o usuario nao tem como saber se a lista esta atualizada.
+ */
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-text-light);
+  flex-shrink: 0;
+  transition: background 0.2s var(--ease);
+}
+
+.sync-dot.is-synced {
+  background: var(--color-success);
+}
+
+.sync-dot.is-syncing {
+  background: var(--color-accent);
+  animation: sync-pulse 1.1s ease-in-out infinite;
+}
+
+.sync-dot.is-error {
+  background: var(--color-error);
+}
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.35); }
+}
+
+.sync-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-text-light);
+  white-space: nowrap;
+}
+
+.sync-indicator.is-error .sync-label {
+  color: var(--color-error);
 }
 
 /* Main */
@@ -80,7 +156,7 @@ body {
   background: var(--color-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: 10px 14px;
+  padding: 12px 14px;
   margin-bottom: 8px;
 }
 
@@ -89,10 +165,10 @@ body {
 }
 
 .section-title {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   color: var(--color-text-muted);
   margin-bottom: 8px;
 }
@@ -102,6 +178,10 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+}
+
+.section-header .section-title {
+  margin-bottom: 0;
 }
 
 /* Perfil - transicao suave entre resumo e formulario */
@@ -239,15 +319,42 @@ body {
   color: var(--color-text-light);
 }
 
+/* Busca */
 .search-box {
+  position: relative;
   margin-bottom: 8px;
 }
 
 .search-input {
-  padding-left: 28px;
+  padding-left: 30px;
+  padding-right: 28px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239aa4b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: 8px center;
+  background-position: 9px center;
+}
+
+.search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-bg);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.search-clear:hover {
+  background: var(--color-text-light);
 }
 
 /* Botoes */
@@ -263,7 +370,7 @@ body {
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
   text-decoration: none;
 }
 
@@ -274,6 +381,19 @@ body {
 
 .btn-primary:hover {
   background: var(--color-primary-dark);
+}
+
+.btn-primary:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.btn-primary.is-success {
+  background: var(--color-success);
+}
+
+.btn-primary.is-error {
+  background: var(--color-error);
 }
 
 .btn-secondary {
@@ -324,6 +444,11 @@ body {
   background: var(--color-bg);
 }
 
+/*
+ * A linha inteira e clicavel (nao so o chip do atalho): area de toque maior
+ * numa popup de 380px, alvo mais facil de acertar e navegavel por teclado
+ * (role="button" + tabindex, ver popup.js).
+ */
 .snippet-item {
   display: flex;
   flex-direction: row;
@@ -332,6 +457,7 @@ body {
   gap: 10px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
   transition: background 0.1s ease;
 }
 
@@ -341,6 +467,10 @@ body {
 
 .snippet-item:hover {
   background: var(--color-surface);
+}
+
+.snippet-item:active {
+  background: #e8ecf2;
 }
 
 .snippet-name {
@@ -358,9 +488,9 @@ body {
 .snippet-trigger {
   display: inline-flex;
   align-items: center;
-  align-self: center;
+  gap: 4px;
   flex-shrink: 0;
-  max-width: 40%;
+  max-width: 42%;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
@@ -372,27 +502,22 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.snippet-trigger:hover {
+.snippet-item:hover .snippet-trigger {
   background: rgba(145, 216, 247, 0.55);
   border-color: var(--color-accent);
 }
 
-.snippet-trigger:active {
-  transform: translateY(1px);
-}
-
 .snippet-trigger.copied {
-  background: rgba(46, 125, 50, 0.12);
+  background: var(--color-success-bg);
   border-color: rgba(46, 125, 50, 0.35);
   color: var(--color-success);
 }
 
 .empty-state {
-  padding: 20px;
+  padding: 24px 16px;
   text-align: center;
 }
 
@@ -410,16 +535,15 @@ body {
 
 /* Footer */
 .footer {
-  padding: 4px 16px 8px;
+  padding: 6px 16px 10px;
   text-align: center;
   background: var(--color-surface);
 }
 
 .footer p {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--color-text-light);
-  font-weight: 400;
-  opacity: 0.7;
+  font-weight: 500;
 }
 
 /* Scrollbar */
