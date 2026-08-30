@@ -30,7 +30,6 @@
     'Importa para o Visual Suporte'
   ];
 
-  const MAX_ANEXO_BYTES = 30 * 1024 * 1024; // 30MB
   const MAX_TITULO_CHARS = 150;
   const DEFAULTS_KEY = 'kanboardRequestDefaults';
 
@@ -107,14 +106,40 @@
     populateSelect(shadow.getElementById('kiCriticidade'), CRITICIDADES);
     populateSelect(shadow.getElementById('kiStatusForm'), STATUS_OPCOES);
 
-    prefillDefaults(shadow);
+    const lockableFields = {
+      clienteId: createLockableField(shadow, {
+        inputId: 'kiClienteId', chipId: 'kiClienteIdChip',
+        chipTextId: 'kiClienteIdChipText', chipRemoveId: 'kiClienteIdChipRemove',
+        storageKey: 'clienteId'
+      }),
+      nomeSolicitante: createLockableField(shadow, {
+        inputId: 'kiNomeSolicitante', chipId: 'kiNomeSolicitanteChip',
+        chipTextId: 'kiNomeSolicitanteChipText', chipRemoveId: 'kiNomeSolicitanteChipRemove',
+        storageKey: 'nomeSolicitante'
+      }),
+      emailParaRetorno: createLockableField(shadow, {
+        inputId: 'kiEmailParaRetorno', chipId: 'kiEmailParaRetornoChip',
+        chipTextId: 'kiEmailParaRetornoChipText', chipRemoveId: 'kiEmailParaRetornoChipRemove',
+        storageKey: 'emailParaRetorno'
+      })
+    };
+
+    prefillDefaults(shadow, lockableFields);
 
     shadow.getElementById('kiForm').addEventListener('submit', (e) => {
       e.preventDefault();
       handleSubmit(shadow, closeModal);
     });
 
-    setTimeout(() => shadow.getElementById('kiClienteId').focus(), 0);
+    // Foca o primeiro campo ainda editável (Cliente ID pode já estar
+    // travado/escondido como chip, então não dá pra focar ele sempre).
+    setTimeout(() => {
+      const candidates = ['kiClienteId', 'kiNomeSolicitante', 'kiEmailParaRetorno', 'kiTipoSolicitacao'];
+      const firstVisible = candidates
+        .map(id => shadow.getElementById(id))
+        .find(el => el && !el.hidden);
+      if (firstVisible) firstVisible.focus();
+    }, 0);
   }
 
   function populateSelect(select, labels, values) {
@@ -126,13 +151,74 @@
     });
   }
 
-  async function prefillDefaults(shadow) {
+  // ═══════════════════════════════════════════════════
+  // CAMPOS FIXÁVEIS (Cliente ID, Nome do Solicitante, E-mail para Retorno)
+  // Ao sair do campo com algo preenchido, ele "trava" virando um chip com o
+  // valor + um "x" pra remover. O valor fixado é salvo por campo (imediato,
+  // não só depois de enviar a solicitação), e volta preenchido sozinho na
+  // próxima vez que o modal abrir — até que o usuário clique no "x".
+  // ═══════════════════════════════════════════════════
+  function createLockableField(shadow, { inputId, chipId, chipTextId, chipRemoveId, storageKey }) {
+    const input = shadow.getElementById(inputId);
+    const chip = shadow.getElementById(chipId);
+    const chipText = shadow.getElementById(chipTextId);
+    const chipRemove = shadow.getElementById(chipRemoveId);
+
+    function lock(value) {
+      input.value = value;
+      input.hidden = true;
+      chipText.textContent = value;
+      chip.hidden = false;
+    }
+
+    function unlock(focus) {
+      chip.hidden = true;
+      input.hidden = false;
+      input.value = '';
+      if (focus) input.focus();
+    }
+
+    input.addEventListener('blur', () => {
+      const value = input.value.trim();
+      if (value) {
+        lock(value);
+        saveFieldDefault(storageKey, value);
+      }
+    });
+
+    chipRemove.addEventListener('click', () => {
+      unlock(true);
+      clearFieldDefault(storageKey);
+    });
+
+    return { lock, unlock };
+  }
+
+  async function saveFieldDefault(key, value) {
     try {
       const data = await chrome.storage.local.get(DEFAULTS_KEY);
       const defaults = data[DEFAULTS_KEY] || {};
-      if (defaults.nomeSolicitante) shadow.getElementById('kiNomeSolicitante').value = defaults.nomeSolicitante;
-      if (defaults.emailParaRetorno) shadow.getElementById('kiEmailParaRetorno').value = defaults.emailParaRetorno;
-      if (defaults.clienteId) shadow.getElementById('kiClienteId').value = defaults.clienteId;
+      defaults[key] = value;
+      await chrome.storage.local.set({ [DEFAULTS_KEY]: defaults });
+    } catch (e) { /* não é crítico, ignora falha */ }
+  }
+
+  async function clearFieldDefault(key) {
+    try {
+      const data = await chrome.storage.local.get(DEFAULTS_KEY);
+      const defaults = data[DEFAULTS_KEY] || {};
+      delete defaults[key];
+      await chrome.storage.local.set({ [DEFAULTS_KEY]: defaults });
+    } catch (e) { /* não é crítico, ignora falha */ }
+  }
+
+  async function prefillDefaults(shadow, lockableFields) {
+    try {
+      const data = await chrome.storage.local.get(DEFAULTS_KEY);
+      const defaults = data[DEFAULTS_KEY] || {};
+      if (defaults.clienteId) lockableFields.clienteId.lock(defaults.clienteId);
+      if (defaults.nomeSolicitante) lockableFields.nomeSolicitante.lock(defaults.nomeSolicitante);
+      if (defaults.emailParaRetorno) lockableFields.emailParaRetorno.lock(defaults.emailParaRetorno);
     } catch (e) { /* sem defaults salvos ainda, tudo bem */ }
   }
 
@@ -151,7 +237,7 @@
   // ═══════════════════════════════════════════════════
   // VALIDAÇÃO
   // ═══════════════════════════════════════════════════
-  function validate(payload, anexoFile) {
+  function validate(payload) {
     const errors = [];
 
     if (!payload.clienteId.trim()) errors.push('Cliente ID é obrigatório.');
@@ -172,10 +258,6 @@
     if (!payload.criticidade) errors.push('Criticidade é obrigatória.');
     if (!payload.statusForm) errors.push('Status é obrigatório.');
 
-    if (anexoFile && anexoFile.size > MAX_ANEXO_BYTES) {
-      errors.push('O anexo excede o limite de 30MB.');
-    }
-
     return errors;
   }
 
@@ -183,27 +265,24 @@
   // SUBMISSÃO
   // ═══════════════════════════════════════════════════
   async function handleSubmit(shadow, closeModal) {
-    const anexoInput = shadow.getElementById('kiAnexo');
-    const anexoFile = anexoInput.files[0] || null;
-
     const payload = {
       clienteId: shadow.getElementById('kiClienteId').value,
       nomeSolicitante: shadow.getElementById('kiNomeSolicitante').value,
       tipoSolicitacao: shadow.getElementById('kiTipoSolicitacao').value,
-      versaoSolicitacao: shadow.getElementById('kiVersaoSolicitacao').value,
+      versaoSolicitacao: '',
       emailParaRetorno: shadow.getElementById('kiEmailParaRetorno').value,
-      emailParaRetornoPrestador: shadow.getElementById('kiEmailPrestador').value,
+      emailParaRetornoPrestador: '',
       titulo: shadow.getElementById('kiTitulo').value,
       descricaoSolicitacao: shadow.getElementById('kiDescricao').value,
-      comentarioSCI: shadow.getElementById('kiComentario').value,
-      empresa: shadow.getElementById('kiEmpresa').value,
-      referencia: shadow.getElementById('kiReferencia').value,
+      comentarioSCI: '',
+      empresa: '',
+      referencia: '',
       classificacao: shadow.getElementById('kiClassificacao').value,
       criticidade: shadow.getElementById('kiCriticidade').value,
       statusForm: shadow.getElementById('kiStatusForm').value
     };
 
-    const errors = validate(payload, anexoFile);
+    const errors = validate(payload);
     const errorBox = shadow.getElementById('kiErrors');
 
     if (errors.length) {
@@ -222,19 +301,6 @@
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Enviando...';
-
-    if (anexoFile) {
-      try {
-        const buffer = await anexoFile.arrayBuffer();
-        payload.anexo = { name: anexoFile.name, type: anexoFile.type, buffer };
-      } catch (err) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-        errorBox.innerHTML = `<li>Falha ao ler o anexo: ${escapeHtml(err.message)}</li>`;
-        errorBox.hidden = false;
-        return;
-      }
-    }
 
     chrome.runtime.sendMessage({ action: 'PROCESS_FULL_REQUEST', payload }, (response) => {
       submitBtn.disabled = false;
@@ -328,27 +394,37 @@
             <div class="ki-grid">
               <div class="ki-field">
                 <label for="kiClienteId">Cliente ID *</label>
-                <input id="kiClienteId" type="text" inputmode="numeric" maxlength="6" placeholder="Ex: 12345">
+                <div class="ki-lockwrap">
+                  <input id="kiClienteId" type="text" inputmode="numeric" maxlength="6" placeholder="Ex: 12345">
+                  <div class="ki-chip" id="kiClienteIdChip" hidden>
+                    <span class="ki-chip-text" id="kiClienteIdChipText"></span>
+                    <button type="button" class="ki-chip-remove" id="kiClienteIdChipRemove" title="Remover e preencher outro" aria-label="Remover Cliente ID fixado">&times;</button>
+                  </div>
+                </div>
               </div>
               <div class="ki-field">
                 <label for="kiNomeSolicitante">Nome do Solicitante *</label>
-                <input id="kiNomeSolicitante" type="text" placeholder="Nome completo">
+                <div class="ki-lockwrap">
+                  <input id="kiNomeSolicitante" type="text" placeholder="Nome completo">
+                  <div class="ki-chip" id="kiNomeSolicitanteChip" hidden>
+                    <span class="ki-chip-text" id="kiNomeSolicitanteChipText"></span>
+                    <button type="button" class="ki-chip-remove" id="kiNomeSolicitanteChipRemove" title="Remover e preencher outro" aria-label="Remover nome fixado">&times;</button>
+                  </div>
+                </div>
               </div>
               <div class="ki-field">
                 <label for="kiTipoSolicitacao">Tipo de Solicitação *</label>
                 <select id="kiTipoSolicitacao"><option value="">Selecione...</option></select>
               </div>
               <div class="ki-field">
-                <label for="kiVersaoSolicitacao">Versão</label>
-                <input id="kiVersaoSolicitacao" type="text" placeholder="Opcional">
-              </div>
-              <div class="ki-field">
                 <label for="kiEmailParaRetorno">E-mail para Retorno *</label>
-                <input id="kiEmailParaRetorno" type="email" placeholder="cliente@exemplo.com">
-              </div>
-              <div class="ki-field">
-                <label for="kiEmailPrestador">E-mail Prestador</label>
-                <input id="kiEmailPrestador" type="email" placeholder="Opcional">
+                <div class="ki-lockwrap">
+                  <input id="kiEmailParaRetorno" type="email" placeholder="cliente@exemplo.com">
+                  <div class="ki-chip" id="kiEmailParaRetornoChip" hidden>
+                    <span class="ki-chip-text" id="kiEmailParaRetornoChipText"></span>
+                    <button type="button" class="ki-chip-remove" id="kiEmailParaRetornoChipRemove" title="Remover e preencher outro" aria-label="Remover e-mail fixado">&times;</button>
+                  </div>
+                </div>
               </div>
               <div class="ki-field full">
                 <label for="kiTitulo">Título * <span class="ki-hint">(máx. ${MAX_TITULO_CHARS} caracteres)</span></label>
@@ -357,22 +433,6 @@
               <div class="ki-field full">
                 <label for="kiDescricao">Descrição *</label>
                 <textarea id="kiDescricao" rows="4" placeholder="Detalhe a solicitação..."></textarea>
-              </div>
-              <div class="ki-field full">
-                <label for="kiComentario">Comentário Interno (SCI)</label>
-                <textarea id="kiComentario" rows="2" placeholder="Opcional, não visível ao cliente"></textarea>
-              </div>
-              <div class="ki-field">
-                <label for="kiEmpresa">Empresa</label>
-                <input id="kiEmpresa" type="text" placeholder="Opcional">
-              </div>
-              <div class="ki-field">
-                <label for="kiReferencia">Referência</label>
-                <input id="kiReferencia" type="text" placeholder="Opcional">
-              </div>
-              <div class="ki-field full">
-                <label for="kiAnexo">Anexo <span class="ki-hint">(máx. 30MB)</span></label>
-                <input id="kiAnexo" type="file">
               </div>
             </div>
 
@@ -408,6 +468,7 @@
     style.textContent = `
       :host { all: initial; }
       * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      [hidden] { display: none !important; }
       .ki-overlay {
         position: fixed; inset: 0; background: rgba(20, 26, 40, 0.55);
         display: flex; align-items: center; justify-content: center;
@@ -452,6 +513,24 @@
         outline: none; border-color: #91d8f7; box-shadow: 0 0 0 3px rgba(145,216,247,0.25);
       }
       .ki-field textarea { resize: vertical; font-family: inherit; }
+      .ki-lockwrap { position: relative; }
+      .ki-chip {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        width: 100%; padding: 8px 6px 8px 10px; min-height: 34px;
+        background: rgba(145,216,247,0.18); border: 1px solid #91d8f7; border-radius: 6px;
+        box-sizing: border-box;
+      }
+      .ki-chip-text {
+        font-size: 13px; font-weight: 700; color: #38486c;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .ki-chip-remove {
+        flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; border: none;
+        background: #fff; color: #6b7a99; font-size: 14px; line-height: 1; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .ki-chip-remove:hover { background: #fdecea; color: #c62828; }
       .ki-errors {
         background: #fdecea; border: 1px solid #f3b3ae; color: #c62828;
         border-radius: 8px; padding: 10px 14px 10px 30px; margin-bottom: 14px; font-size: 12.5px;

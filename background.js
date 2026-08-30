@@ -322,13 +322,6 @@ async function runKanboardRequestAutomation(payload) {
     const fillResult = await krExecInTab(tabId, krFillStep1Form, [payload]);
     if (!fillResult.ok) throw krTaggedError(fillResult.error, tabId);
 
-    if (payload.anexo) {
-      const attachResult = await krExecInTab(tabId, krAttachFile, [
-        payload.anexo.name, payload.anexo.type, payload.anexo.buffer, 'file'
-      ]);
-      if (!attachResult.ok) throw krTaggedError(attachResult.error, tabId);
-    }
-
     const beforeUrl1 = (await chrome.tabs.get(tabId)).url;
 
     const clickResult1 = await krExecInTab(tabId, krClickSubmit, []);
@@ -526,35 +519,14 @@ function krFillStep1Form(payload) {
   if (!setValue('#clienteId', payload.clienteId)) missing.push('Cliente ID (#clienteId)');
   if (!setValue('input[name="nomeSolicitante"]', payload.nomeSolicitante)) missing.push('Nome do Solicitante');
   if (!setValue('#tipoSolicitacao', payload.tipoSolicitacao)) missing.push('Tipo de Solicitação');
-  if (payload.versaoSolicitacao) setValue('input[name="versaoSolicitacao"]', payload.versaoSolicitacao);
   if (!setValue('#emailParaRetorno', payload.emailParaRetorno)) missing.push('E-mail para Retorno');
-  if (payload.emailParaRetornoPrestador) setValue('#emailParaRetornoPrestador', payload.emailParaRetornoPrestador);
   if (!setValue('#titulo', payload.titulo)) missing.push('Título');
   if (!setValue('textarea[name="descricaoSolicitacao"]', payload.descricaoSolicitacao)) missing.push('Descrição');
-  if (payload.comentarioSCI) setValue('textarea[name="comentarioSCI"]', payload.comentarioSCI);
-  if (payload.empresa) setValue('input[name="empresa"]', payload.empresa);
-  if (payload.referencia) setValue('input[name="referencia"]', payload.referencia);
 
   if (missing.length) {
     return { ok: false, error: 'Campo(s) não encontrado(s) na página (pode ter mudado de estrutura): ' + missing.join(', ') };
   }
   return { ok: true };
-}
-
-function krAttachFile(fileName, fileType, bufferArray, inputId) {
-  const input = document.getElementById(inputId);
-  if (!input) return { ok: false, error: `Campo de anexo (#${inputId}) não encontrado na página.` };
-  try {
-    const bytes = new Uint8Array(bufferArray);
-    const file = new File([bytes], fileName, { type: fileType || 'application/octet-stream' });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    input.files = dt.files;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: 'Falha ao anexar arquivo: ' + err.message };
-  }
 }
 
 function krClickSubmit() {
@@ -630,7 +602,7 @@ function krClickConfirmStatus() {
 }
 
 /**
- * ⚠️ Melhor esforço: extrai o ID da solicitação pela URL ou, na falta dela,
+ *  Melhor esforço: extrai o ID da solicitação pela URL ou, na falta dela,
  * por um padrão de texto no corpo da página de resultado. Ajustar para um
  * seletor exato assim que o HTML dessa tela for confirmado.
  */
