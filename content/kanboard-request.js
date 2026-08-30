@@ -79,6 +79,18 @@
     shadow.innerHTML = buildModalHtml();
     injectModalStyles(shadow);
 
+    // ISOLAMENTO DE TECLADO/INPUT: sem isso, eventos disparados dentro do
+    // Shadow DOM sofrem "event retargeting" e chegam aos listeners globais
+    // da página (ex: o document.addEventListener('input', ...) do content.js,
+    // que expande snippets) com e.target apontando para este <div> host —
+    // e a lista de exclusão por id (IGNORED_INPUT_HOST_IDS) nem sempre é
+    // suficiente para bloquear isso sozinha. Paramos a propagação aqui,
+    // no host, mesmo padrão usado no modal assistido (content-assistant.js).
+    const isolateFromPage = (e) => e.stopPropagation();
+    ['keydown', 'keyup', 'keypress', 'input', 'beforeinput'].forEach((type) => {
+      host.addEventListener(type, isolateFromPage);
+    });
+
     const closeModal = () => {
       host.remove();
       modalOpen = false;

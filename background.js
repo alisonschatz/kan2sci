@@ -13,7 +13,7 @@ const IS_DEV = !('update_url' in chrome.runtime.getManifest());
 const CONFIG = {
   GITHUB_YAML_URL: IS_DEV
     ? chrome.runtime.getURL('data/snippets.yml')   // arquivo local na extensão
-    : 'https://raw.githubusercontent.com/alisonschatz/sci-snippets/main/snippets.yml',
+    : 'https://raw.githubusercontent.com/alisonschatz/kan2sci/main/data/snippets.yml',
 
   SYNC_INTERVAL_MINUTES: 30,
   RETRY_ATTEMPTS: 3,
